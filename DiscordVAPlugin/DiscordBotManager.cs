@@ -130,7 +130,7 @@ public class DiscordBotManager : IDisposable
             var voiceState = guild.GetUser(selfUser.Id);
             if (voiceState != null)
             {
-                await voiceState.ModifyAsync(x => x.Muted = !voiceState.IsMuted);
+                await voiceState.ModifyAsync(x => x.Mute = !voiceState.IsMuted);
                 _va.WriteToLog($"Mute toggled: {!voiceState.IsMuted}", "green");
                 return;
             }
@@ -147,7 +147,7 @@ public class DiscordBotManager : IDisposable
             var voiceState = guild.GetUser(selfUser.Id);
             if (voiceState != null)
             {
-                await voiceState.ModifyAsync(x => x.Deafened = !voiceState.IsDeafened);
+                await voiceState.ModifyAsync(x => x.Deaf = !voiceState.IsDeafened);
                 _va.WriteToLog($"Deafen toggled: {!voiceState.IsDeafened}", "green");
                 return;
             }
@@ -197,8 +197,8 @@ public class DiscordBotManager : IDisposable
 
             if (channel != null)
             {
-                var users = await channel.GetUsersAsync().FlattenAsync();
-                return users.ToList();
+                // SocketTextChannel exposes cached guild users via Users (no GetUsersAsync in 3.x)
+                return channel.Users.Cast<IGuildUser>().ToList();
             }
         }
 
