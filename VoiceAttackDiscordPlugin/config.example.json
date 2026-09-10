@@ -1,5 +1,6 @@
 {
   "BotToken": "YOUR_BOT_TOKEN_HERE",
+  "EncryptedBotToken": "",
   "DefaultGuildId": 0,
   "DefaultChannelName": "general",
   "AutoConnect": true,

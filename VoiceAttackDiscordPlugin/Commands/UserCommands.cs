@@ -80,8 +80,11 @@ public class UserCommands
         }
 
         if (string.IsNullOrWhiteSpace(channelName))
+            channelName = _botManager.DefaultChannelName;
+
+        if (string.IsNullOrWhiteSpace(channelName))
         {
-            _va.WriteToLog("Discord: No channel name provided for listusers.", "yellow");
+            _va.WriteToLog("Discord: No channel name provided for listusers (and no DefaultChannelName configured).", "yellow");
             return;
         }
 

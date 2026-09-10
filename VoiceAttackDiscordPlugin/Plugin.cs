@@ -1,3 +1,4 @@
+using System.Reflection;
 using VoiceAttackDiscordPlugin.Config;
 
 namespace VoiceAttackDiscordPlugin;
@@ -6,12 +7,28 @@ public class Plugin
 {
     private static readonly Guid PluginId = new("{A7B8C9D0-E1F2-3456-7890-ABCDEF123456}");
     private const string PluginName = "VoiceAttackDiscordPlugin";
-    private const string PluginVersion = "1.0.0";
+
+    // Single source of truth: <Version> in the .csproj
+    private static string PluginVersion =>
+        Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "?";
 
     private static dynamic? _va;
     private static DiscordBotManager? _botManager;
     private static CommandRouter? _router;
     private static PluginConfig? _config;
+
+    // Tracked background work so shutdown can wait for it briefly instead of abandoning it.
+    private static readonly object _tasksLock = new();
+    private static readonly List<Task> _inflight = new();
+
+    private static void Track(Task task)
+    {
+        lock (_tasksLock)
+        {
+            _inflight.RemoveAll(t => t.IsCompleted);
+            _inflight.Add(task);
+        }
+    }
 
     public static Guid VA_Id() => PluginId;
 
@@ -35,11 +52,16 @@ public class Plugin
             _botManager = new DiscordBotManager(_config, vaProxy);
             _router = new CommandRouter(_botManager, vaProxy);
 
-            vaProxy.WriteToLog($"{PluginName} initialized. Bot token configured: {(!string.IsNullOrEmpty(_config.BotToken) && _config.BotToken != "YOUR_BOT_TOKEN_HERE")}", "green");
+            vaProxy.WriteToLog($"{PluginName} initialized. Bot token configured: {_config.HasToken}", "green");
 
-            if (_config.AutoConnect && !string.IsNullOrEmpty(_config.BotToken) && _config.BotToken != "YOUR_BOT_TOKEN_HERE")
+            if (!_config.HasToken)
             {
-                _ = Task.Run(async () =>
+                vaProxy.WriteToLog($"{PluginName}: No bot token yet. Run the setup wizard " +
+                    "(or paste the token into config.json — it encrypts itself on next load).", "yellow");
+            }
+            else if (_config.AutoConnect)
+            {
+                Track(Task.Run(async () =>
                 {
                     try
                     {
@@ -50,7 +72,7 @@ public class Plugin
                     {
                         vaProxy.WriteToLog($"{PluginName} auto-connect failed: {ex.Message}", "red");
                     }
-                });
+                }));
             }
         }
         catch (Exception ex)
@@ -63,13 +85,26 @@ public class Plugin
     {
         try
         {
-            _ = Task.Run(async () =>
+            List<Task> pending;
+            lock (_tasksLock)
             {
-                if (_botManager != null)
+                pending = _inflight.Where(t => !t.IsCompleted).ToList();
+                _inflight.Clear();
+            }
+            if (pending.Count > 0)
+            {
+                try { Task.WhenAll(pending).Wait(TimeSpan.FromSeconds(3)); }
+                catch { /* shutting down; never block VoiceAttack */ }
+            }
+
+            if (_botManager != null)
+            {
+                try { _botManager.DisconnectAsync().Wait(TimeSpan.FromSeconds(5)); }
+                catch (Exception ex)
                 {
-                    await _botManager.DisconnectAsync();
+                    vaProxy.WriteToLog($"{PluginName} shutdown disconnect: {ex.Message}", "yellow");
                 }
-            });
+            }
 
             vaProxy.WriteToLog($"{PluginName} shutting down.", "yellow");
         }
@@ -85,7 +120,10 @@ public class Plugin
         {
             _botManager?.StopAll();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            try { _va?.WriteToLog($"{PluginName} stop error: {ex.Message}", "yellow"); } catch { }
+        }
     }
 
     public static void VA_Invoke1(dynamic vaProxy)
@@ -101,15 +139,13 @@ public class Plugin
             // V4 interface: only Context is passed directly (Text1/2/3 do not exist).
             // Convention: Context carries "action:arg1:arg2" (colon-delimited).
             // Context parses {TXT:...} tokens, so dictation/variables can be embedded.
-            string fullContext = vaProxy.Context?.ToString() ?? "";
-            var parts = fullContext.Split(new[] { ':' }, StringSplitOptions.None);
+            var parsed = CommandContext.Parse(vaProxy.Context?.ToString());
+            string context = parsed.Action;
+            string text1 = parsed.Arg1;
+            string text2 = parsed.Arg2;
+            string text3 = parsed.Arg3;
 
-            string context = parts.Length > 0 ? parts[0].Trim() : "";
-            string text1 = parts.Length > 1 ? parts[1].Trim() : "";
-            string text2 = parts.Length > 2 ? parts[2].Trim() : "";
-            string text3 = parts.Length > 3 ? string.Join(":", parts.Skip(3)).Trim() : "";
-
-            _ = Task.Run(async () =>
+            Track(Task.Run(async () =>
             {
                 try
                 {
@@ -119,7 +155,7 @@ public class Plugin
                 {
                     vaProxy.WriteToLog($"{PluginName} command error ({context}): {ex.Message}", "red");
                 }
-            });
+            }));
         }
         catch (Exception ex)
         {

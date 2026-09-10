@@ -2,7 +2,7 @@
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
 [![VoiceAttack V2](https://img.shields.io/badge/VoiceAttack-V2%20(V4%20API)-2b9d48)](https://voiceattack.com/)
-[![Discord.Net](https://img.shields.io/badge/Discord.Net-3.15-5865F2)](https://github.com/discord-net/Discord.Net)
+[![Discord.Net](https://img.shields.io/badge/Discord.Net-3.20-5865F2)](https://github.com/discord-net/Discord.Net)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Windows](https://img.shields.io/badge/Platform-Windows-0078D4)](https://github.com/ARA-ARA-ENJOYER/VoiceAttack-Discord-Plugin)
 
@@ -83,6 +83,10 @@ variables work inline. Ignore the legacy variable input boxes — they do nothin
 
 Read them back with `{TXT:...}`, e.g. TTS: `Last messages: {TXT:Discord.LastMessages}`.
 
+💡 `sendmessage`, `readmessages`, `listusers`, and `joinvoice` fall back to
+`DefaultChannelName` from `config.json` when the channel part is empty
+(e.g. Context `sendmessage:` + your dictated text uses the default channel).
+
 ---
 
 ## 💡 Example Voice Commands
@@ -105,6 +109,30 @@ Create these under **Other > Advanced > Execute an External Plugin Function**:
 - **Voice channels**: bot needs Connect and Speak permissions.
 - **Rate limits**: Discord API throttles abuse; the plugin retries but go easy.
 - **Windows only**: call automation works on Windows.
+
+---
+
+## 🔒 Security & Privacy
+
+- **Your bot token is encrypted on this PC.** The first time VoiceAttack loads the
+  plugin, a plaintext token in `config.json` is re-saved encrypted (Windows DPAPI,
+  tied to your Windows user account). Copying `config.json` to another PC or user
+  won't work there — just re-enter the token via the setup wizard.
+- **Give the bot as few permissions as possible.** It only needs *Send Messages,
+  Read Message History, Connect, Speak, Use Voice Activity* plus the *Server Members*
+  and *Message Content* intents. If the bot is only for your server, don't invite it
+  anywhere else.
+- **If a token ever leaks:** Discord Developer Portal → your app → Bot → **Reset Token**,
+  then paste the new one via the setup wizard (or into `config.json` — it re-encrypts
+  on next load).
+- **Voice commands act immediately** — saying the phrase really sends the message or
+  places the call. Only install voice profiles you trust, and pause VoiceAttack's
+  listening when you're not using it.
+- **Chat content stays local** — messages the plugin reads only land in VoiceAttack
+  variables on your PC. The live log prints channel/DM activity (single-line,
+  truncated); nothing is sent anywhere except to Discord itself.
+- **Verify downloads:** every release ships `SHA256SUMS.txt`. In PowerShell run
+  `Get-FileHash <file> -Algorithm SHA256` and compare.
 
 ---
 

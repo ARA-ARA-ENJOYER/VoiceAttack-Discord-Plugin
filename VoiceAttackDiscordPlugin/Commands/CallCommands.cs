@@ -81,12 +81,11 @@ public class CallCommands
 
         // Usernames are unique; display names are not. If the display name is shared,
         // navigate by @username instead so the Quick Switcher lands on the right DM.
-        string searchText = displayName;
         int nameMatches = await _botManager.CountDistinctUsersByDisplayNameAsync(displayName);
+        string searchText = CallSearchText.Select(displayName, nameMatches, user.Username);
         if (nameMatches > 1)
         {
             _va.WriteToLog($"Discord: Warning: {nameMatches} users share the display name '{displayName}'. Navigating by unique username '@{user.Username}' instead.", "yellow");
-            searchText = "@" + user.Username;
         }
 
         try
@@ -223,6 +222,15 @@ public class CallCommands
             return IntPtr.Zero;
         }
 
+        // A local process can be named anything: only automate a window whose
+        // executable really lives in a Discord install folder. If the path can't
+        // be read (permissions), fall through to the visible-window check below.
+        if (!LooksLikeDiscordInstall(discordProcess))
+        {
+            _va.WriteToLog("Discord: Found a process named Discord outside a Discord install folder — refusing to automate it.", "red");
+            return IntPtr.Zero;
+        }
+
         if (discordProcess.MainWindowHandle == IntPtr.Zero)
         {
             _va.WriteToLog("Discord: Discord window not visible. Please open Discord first.", "red");
@@ -230,6 +238,22 @@ public class CallCommands
         }
 
         return discordProcess.MainWindowHandle;
+    }
+
+    private static bool LooksLikeDiscordInstall(Process process)
+    {
+        try
+        {
+            string? path = process.MainModule?.FileName;
+            if (string.IsNullOrEmpty(path)) return true;
+            string? dir = Path.GetDirectoryName(path);
+            return string.Equals(Path.GetFileName(path), "Discord.exe", StringComparison.OrdinalIgnoreCase)
+                && dir != null && dir.Contains("Discord", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return true;
+        }
     }
 
     // --- Low-level keyboard helpers (user32 keybd_event; the old SendKeys import does not exist) ---

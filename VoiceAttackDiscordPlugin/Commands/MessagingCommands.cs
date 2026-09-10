@@ -15,9 +15,14 @@ public class MessagingCommands
 
     public async Task SendMessageAsync(string channelName, string message)
     {
+        // Empty channel falls back to the configured default (lets `sendmessage:<message>` work
+        // when the Context only carries the text — see CommandContext parsing).
+        if (string.IsNullOrWhiteSpace(channelName))
+            channelName = _botManager.DefaultChannelName;
+
         if (string.IsNullOrWhiteSpace(channelName))
         {
-            _va.WriteToLog("Discord: No channel name provided for sendmessage.", "yellow");
+            _va.WriteToLog("Discord: No channel name provided for sendmessage (and no DefaultChannelName configured).", "yellow");
             return;
         }
 
@@ -54,8 +59,11 @@ public class MessagingCommands
     public async Task ReadMessagesAsync(string channelName, string countStr)
     {
         if (string.IsNullOrWhiteSpace(channelName))
+            channelName = _botManager.DefaultChannelName;
+
+        if (string.IsNullOrWhiteSpace(channelName))
         {
-            _va.WriteToLog("Discord: No channel name provided for readmessages.", "yellow");
+            _va.WriteToLog("Discord: No channel name provided for readmessages (and no DefaultChannelName configured).", "yellow");
             return;
         }
 
@@ -83,8 +91,12 @@ public class MessagingCommands
             var messages = await channel.GetMessagesAsync(count).FlattenAsync();
             var messageList = messages.Reverse().ToList();
 
+            // Sanitize: channel content can contain control characters; keep the
+            // log line and the TTS variable single-line and bounded.
             var result = string.Join("\n", messageList.Select(m =>
-                $"[{m.CreatedAt:HH:mm}] {m.Author.Username}: {m.Content}"));
+                $"[{m.CreatedAt:HH:mm}] {LogSanitizer.Sanitize(m.Author.Username, 64)}: {LogSanitizer.Sanitize(m.Content, 2000)}"));
+            if (result.Length > 8000)
+                result = result.Substring(0, 8000) + "… [truncated]";
 
             _va.SetText("Discord.LastMessages", result);
             _va.SetText("Discord.LastMessageCount", messageList.Count.ToString());

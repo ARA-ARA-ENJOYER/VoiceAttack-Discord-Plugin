@@ -27,9 +27,9 @@
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications) → **New Application** → give it a name.
 2. Open the **Bot** tab → **Reset Token** → copy the token (keep it secret!).
 3. Under **Privileged Gateway Intents**, enable:
-   - ✅ **Presence Intent**
    - ✅ **Server Members Intent**
    - ✅ **Message Content Intent**
+   - (Presence Intent is *not* needed.)
 4. Go to **OAuth2 → URL Generator**:
    - Scopes: `bot`, `applications.commands`
    - Permissions: *Send Messages, Read Message History, Connect, Speak, Use Voice Activity*
@@ -43,6 +43,8 @@
 ## Part 2 — 📦 Deploy the Plugin
 
 1. Build the project (`dotnet build -c Release`) or grab the latest release.
+   Verifying a download? Compare `Get-FileHash <file> -Algorithm SHA256`
+   (PowerShell) against `SHA256SUMS.txt` on the release page.
 2. Copy the **entire output folder** to:
    ```
    C:\Program Files\VoiceAttack\Apps\VA.VoiceAttackDiscordPlugin\
@@ -55,16 +57,19 @@
    ```
    copy config.example.json config.json
    ```
-   ```json
-   {
-     "BotToken": "PASTE_YOUR_BOT_TOKEN_HERE",
-     "DefaultGuildId": 123456789012345678,
-     "DefaultChannelName": "general",
-     "AutoConnect": true,
-     "LogLevel": "Info"
-   }
-   ```
-   🔒 `config.json` is **git-ignored** — your token never leaves your machine.
+    ```json
+    {
+      "BotToken": "PASTE_YOUR_BOT_TOKEN_HERE",
+      "EncryptedBotToken": "",
+      "DefaultGuildId": 123456789012345678,
+      "DefaultChannelName": "general",
+      "AutoConnect": true,
+      "LogLevel": "Info"
+    }
+    ```
+    🔒 `config.json` is **git-ignored** — your token never leaves your machine.
+    Leave `EncryptedBotToken` empty: the plugin fills it in (encrypted for your
+    Windows user) on first run and clears the plaintext field.
 
 ---
 

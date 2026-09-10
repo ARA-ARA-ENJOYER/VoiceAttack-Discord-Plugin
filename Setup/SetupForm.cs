@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace VoiceAttackDiscordPlugin.Setup;
 
@@ -35,7 +36,12 @@ public sealed class SetupForm : Form
     private readonly TextBox _token = new();
     private readonly TextBox _guildId = new();
     private readonly Label _tokenStatus = new();
+    private readonly Button _save = new();
     private readonly Label _finishSummary = new();
+
+    // Bot tokens are three dot-separated segments; mirrors the plugin's TokenValidator.
+    private static readonly Regex TokenPattern = new(@"^[\w-]+\.[\w-]+\.[\w-]+$", RegexOptions.Compiled);
+    private bool _tokenValid;
 
     private int _step;
     private string _installDir = "";
@@ -252,6 +258,14 @@ public sealed class SetupForm : Form
 
         _token.UseSystemPasswordChar = true;
         _token.SetBounds(0, 118, 528, 28);
+        _token.TextChanged += (_, _) =>
+        {
+            // Any edit invalidates the previous validation — the token on screen
+            // is no longer the one Discord approved.
+            _tokenValid = false;
+            _save.Enabled = false;
+            _tokenStatus.Text = "";
+        };
         _stepConfigure.Controls.Add(_token);
 
         var guildLbl = new Label { Text = "Server (guild) ID:", AutoSize = false };
@@ -270,7 +284,9 @@ public sealed class SetupForm : Form
         _tokenStatus.SetBounds(150, 212, 378, 30);
         _stepConfigure.Controls.Add(_tokenStatus);
 
-        var save = new Button { Text = "Save config.json" };
+        var save = _save;
+        save.Text = "Save config.json";
+        save.Enabled = false;
         save.SetBounds(0, 250, 140, 30);
         save.Click += (_, _) => SaveConfig();
         _stepConfigure.Controls.Add(save);
@@ -285,6 +301,14 @@ public sealed class SetupForm : Form
             return;
         }
 
+        if (!TokenPattern.IsMatch(token))
+        {
+            SetStatus("That doesn't look like a bot token (three parts separated by dots).", Color.Red);
+            _tokenValid = false;
+            _save.Enabled = false;
+            return;
+        }
+
         SetStatus("Checking with Discord…", Color.Gray);
         try
         {
@@ -295,16 +319,22 @@ public sealed class SetupForm : Form
             if (!res.IsSuccessStatusCode)
             {
                 SetStatus($"Invalid token (Discord returned {(int)res.StatusCode}).", Color.Red);
+                _tokenValid = false;
+                _save.Enabled = false;
                 return;
             }
             var json = await res.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
             var name = doc.RootElement.TryGetProperty("username", out var u) ? u.GetString() : "?";
             SetStatus($"✓ Token valid — bot is \"{name}\".", Color.Green);
+            _tokenValid = true;
+            _save.Enabled = true;
         }
         catch (Exception ex)
         {
             SetStatus($"Could not reach Discord: {ex.Message}", Color.Red);
+            _tokenValid = false;
+            _save.Enabled = false;
         }
     }
 
@@ -316,26 +346,36 @@ public sealed class SetupForm : Form
 
     private void SaveConfig()
     {
-        if (string.IsNullOrWhiteSpace(_token.Text) || !ulong.TryParse(_guildId.Text.Trim(), out var guildId))
+        if (!_tokenValid || !TokenPattern.IsMatch(_token.Text.Trim()))
         {
-            MessageBox.Show("Enter a bot token and a numeric server ID first.", "Setup",
+            MessageBox.Show("Click \"Validate token\" first — only a token Discord approved can be saved.", "Setup",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        if (!ulong.TryParse(_guildId.Text.Trim(), out var guildId))
+        {
+            MessageBox.Show("Enter a numeric server ID first.", "Setup",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
         try
         {
-            var json = "{\n" +
-                       $"  \"BotToken\": \"{_token.Text.Trim()}\",\n" +
-                       $"  \"DefaultGuildId\": {guildId},\n" +
-                       "  \"DefaultChannelName\": \"general\",\n" +
-                       "  \"AutoConnect\": true,\n" +
-                       "  \"LogLevel\": \"Info\"\n" +
-                       "}";
-            // Validate shape before writing
-            using var _ = JsonDocument.Parse(json);
+            // Serialized (never string-concatenated) so any token text stays valid JSON.
+            // The plugin encrypts BotToken in place on first load (DPAPI, this Windows user).
+            var payload = new Dictionary<string, object?>
+            {
+                ["BotToken"] = _token.Text.Trim(),
+                ["EncryptedBotToken"] = "",
+                ["DefaultGuildId"] = guildId,
+                ["DefaultChannelName"] = "general",
+                ["AutoConnect"] = true,
+                ["LogLevel"] = "Info"
+            };
+            string json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(Path.Combine(_installDir, "config.json"), json);
-            MessageBox.Show("config.json saved. Your token stays on this PC only.", "Setup",
+            MessageBox.Show("config.json saved. Your token stays on this PC only, and the plugin encrypts it on first run.", "Setup",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)

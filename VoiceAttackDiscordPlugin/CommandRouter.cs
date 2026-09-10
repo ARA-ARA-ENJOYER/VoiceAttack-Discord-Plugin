@@ -11,6 +11,10 @@ public class CommandRouter
     private readonly UserCommands _users;
     private readonly CallCommands _call;
 
+    // One command at a time: overlapping voice commands must not interleave
+    // (e.g. a second connect racing the first, or two call automations typing).
+    private readonly SemaphoreSlim _routeLock = new(1, 1);
+
     public CommandRouter(DiscordBotManager botManager, dynamic va)
     {
         _botManager = botManager;
@@ -22,6 +26,19 @@ public class CommandRouter
     }
 
     public async Task RouteAsync(string context, string text1, string text2, string text3)
+    {
+        await _routeLock.WaitAsync();
+        try
+        {
+            await RouteCoreAsync(context, text1, text2, text3);
+        }
+        finally
+        {
+            _routeLock.Release();
+        }
+    }
+
+    private async Task RouteCoreAsync(string context, string text1, string text2, string text3)
     {
         if (string.IsNullOrWhiteSpace(context))
         {

@@ -14,8 +14,11 @@ public class VoiceCommands
     public async Task JoinVoiceAsync(string channelName)
     {
         if (string.IsNullOrWhiteSpace(channelName))
+            channelName = _botManager.DefaultChannelName;
+
+        if (string.IsNullOrWhiteSpace(channelName))
         {
-            _va.WriteToLog("Discord: No voice channel name provided for joinvoice.", "yellow");
+            _va.WriteToLog("Discord: No voice channel name provided for joinvoice (and no DefaultChannelName configured).", "yellow");
             return;
         }
 

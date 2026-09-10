@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceAttackDiscordPlugin", "VoiceAttackDiscordPlugin\VoiceAttackDiscordPlugin.csproj", "{37104F03-57C5-4959-A491-1305C9F74942}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceAttackDiscordPlugin.Tests", "VoiceAttackDiscordPlugin.Tests\VoiceAttackDiscordPlugin.Tests.csproj", "{0A57A032-7B61-4A20-B6E8-C55121101383}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceAttackDiscordPlugin.Setup", "Setup\VoiceAttackDiscordPlugin.Setup.csproj", "{FEB2552A-21EE-4343-B367-F217C3246393}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{37104F03-57C5-4959-A491-1305C9F74942}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37104F03-57C5-4959-A491-1305C9F74942}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37104F03-57C5-4959-A491-1305C9F74942}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37104F03-57C5-4959-A491-1305C9F74942}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A57A032-7B61-4A20-B6E8-C55121101383}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A57A032-7B61-4A20-B6E8-C55121101383}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A57A032-7B61-4A20-B6E8-C55121101383}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A57A032-7B61-4A20-B6E8-C55121101383}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEB2552A-21EE-4343-B367-F217C3246393}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEB2552A-21EE-4343-B367-F217C3246393}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEB2552A-21EE-4343-B367-F217C3246393}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEB2552A-21EE-4343-B367-F217C3246393}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
