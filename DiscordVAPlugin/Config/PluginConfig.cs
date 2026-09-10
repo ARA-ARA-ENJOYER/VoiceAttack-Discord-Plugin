@@ -1,3 +1,4 @@
+using System.Reflection;
 using Newtonsoft.Json;
 
 namespace DiscordVAPlugin.Config;
@@ -10,15 +11,17 @@ public class PluginConfig
     public bool AutoConnect { get; set; } = true;
     public string LogLevel { get; set; } = "Info";
 
-    private static string GetConfigPath(dynamic va)
+    private static string GetConfigPath()
     {
-        string pluginDir = Path.GetDirectoryName(va.PluginDir?.ToString() ?? "") ?? "";
+        // VoiceAttack's init proxy has no plugin-dir member; resolve from our own assembly location
+        string? location = Assembly.GetExecutingAssembly().Location;
+        string pluginDir = Path.GetDirectoryName(location) ?? AppContext.BaseDirectory;
         return Path.Combine(pluginDir, "config.json");
     }
 
     public static PluginConfig Load(dynamic va)
     {
-        string path = GetConfigPath(va);
+        string path = GetConfigPath();
 
         if (!File.Exists(path))
         {
@@ -48,7 +51,7 @@ public class PluginConfig
 
     public static void Save(PluginConfig config, dynamic va)
     {
-        string path = GetConfigPath(va);
+        string path = GetConfigPath();
         string json = JsonConvert.SerializeObject(config, Formatting.Indented);
         File.WriteAllText(path, json);
     }
