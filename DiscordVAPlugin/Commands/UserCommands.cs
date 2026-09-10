@@ -41,6 +41,36 @@ public class UserCommands
         _va.WriteToLog($"Discord: Found user '{user.Username}' (ID: {user.Id}).", "green");
     }
 
+    public async Task SearchUserIdAsync(string userIdStr)
+    {
+        if (string.IsNullOrWhiteSpace(userIdStr) || !ulong.TryParse(userIdStr.Trim(), out ulong userId))
+        {
+            _va.WriteToLog("Discord: Invalid user ID provided for searchuserid.", "yellow");
+            return;
+        }
+
+        if (!_botManager.IsConnected)
+        {
+            _va.WriteToLog("Discord: Not connected. Use 'connect' context first.", "red");
+            return;
+        }
+
+        var user = await _botManager.FindUserByIdAsync(userId);
+        if (user == null)
+        {
+            _va.WriteToLog($"Discord: User ID '{userId}' not found.", "red");
+            _va.SetVar("Discord.found.UserId", "");
+            _va.SetVar("Discord.found.DisplayName", "");
+            _va.SetVar("Discord.found.Username", "");
+            return;
+        }
+
+        _va.SetVar("Discord.found.UserId", user.Id.ToString());
+        _va.SetVar("Discord.found.DisplayName", user.GlobalName ?? user.Username);
+        _va.SetVar("Discord.found.Username", user.Username);
+        _va.WriteToLog($"Discord: Found user '{user.Username}' (ID: {user.Id}).", "green");
+    }
+
     public async Task ListUsersAsync(string channelName)
     {
         if (!_botManager.IsConnected)

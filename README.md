@@ -74,12 +74,14 @@ Use the **Execute an External Plugin Function** action in VoiceAttack with the f
 | `readmessages` | channel name | count | Read messages (stored in `Discord.LastMessages`) |
 | `senddm` | user name | message | Send a DM to a user |
 | `searchuser` | user name | | Search for a user (sets `Discord.found.UserId`, etc.) |
+| `searchuserid` | user ID | | Search for a user by ID, name-change proof (sets `Discord.found.*`) |
 | `listusers` | channel name | | List users in a channel |
 | `joinvoice` | channel name | | Join a voice channel |
 | `leavevoice` | | | Leave current voice channel |
 | `mute` | | | Toggle self-mute |
 | `deafen` | | | Toggle self-deafen |
 | `calluser` | user name | | Open Discord DM and initiate call (keyboard automation) |
+| `callbyid` | user ID | | Look up user by ID, open DM via quick switcher, call with Ctrl+' |
 
 ### VoiceAttack Variables Set
 

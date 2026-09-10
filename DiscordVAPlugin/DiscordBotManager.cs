@@ -185,6 +185,25 @@ public class DiscordBotManager : IDisposable
         return null;
     }
 
+    public async Task<IUser?> FindUserByIdAsync(ulong userId)
+    {
+        if (_client == null) return null;
+
+        // Fast path: cached user (ID lookups are name-change proof)
+        var cached = _client.GetUser(userId);
+        if (cached != null) return cached;
+
+        // Fallback: REST fetch (works even if the user shares no cached guild)
+        try
+        {
+            return await _client.Rest.GetUserAsync(userId);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public async Task<IReadOnlyCollection<IGuildUser>> GetChannelUsersAsync(string channelName)
     {
         if (_client?.Guilds == null)

@@ -51,6 +51,9 @@ public class CommandRouter
             case "searchuser":
                 await _users.SearchUserAsync(text1);
                 break;
+            case "searchuserid":
+                await _users.SearchUserIdAsync(text1);
+                break;
             case "listusers":
                 await _users.ListUsersAsync(text1);
                 break;
@@ -68,6 +71,9 @@ public class CommandRouter
                 break;
             case "calluser":
                 await _call.CallUserAsync(text1);
+                break;
+            case "callbyid":
+                await _call.CallUserByIdAsync(text1);
                 break;
             default:
                 _va.WriteToLog($"DiscordVAPlugin: Unknown context '{context}'.", "yellow");
