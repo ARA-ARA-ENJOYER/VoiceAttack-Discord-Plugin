@@ -28,7 +28,7 @@ public class VoiceCommands
         var channel = await _botManager.JoinVoiceChannelAsync(channelName);
         if (channel != null)
         {
-            _va.SetVar("Discord.VoiceChannel", channel.Name);
+            _va.SetText("Discord.VoiceChannel", channel.Name);
         }
     }
 
@@ -41,7 +41,7 @@ public class VoiceCommands
         }
 
         await _botManager.LeaveVoiceChannelAsync();
-        _va.SetVar("Discord.VoiceChannel", "");
+        _va.SetText("Discord.VoiceChannel", "");
     }
 
     public async Task ToggleMuteAsync()

@@ -64,24 +64,28 @@ Edit `config.json` in the plugin folder:
 
 ## Usage
 
-Use the **Execute an External Plugin Function** action in VoiceAttack with the following contexts:
+Use the **Execute an External Plugin Function** action in VoiceAttack. Under the V4 plugin
+interface, everything is passed in the single **Context** field as `action:arg1:arg2`
+(colon-delimited; extra colons stay in the last argument). The Context field parses
+`{TXT:...}` tokens, so dictation and variables can be embedded. Ignore the legacy
+SmallInt/Text/Integer/Decimal/Boolean/Date input boxes — they do nothing for V4 plugins.
 
-| Context | Text1 | Text2 | Description |
-|---------|-------|-------|-------------|
-| `connect` | | | Connect to Discord |
-| `disconnect` | | | Disconnect from Discord |
-| `sendmessage` | channel name | message | Send a message to a channel |
-| `readmessages` | channel name | count | Read messages (stored in `Discord.LastMessages`) |
-| `senddm` | user name | message | Send a DM to a user |
-| `searchuser` | user name | | Search for a user (sets `Discord.found.UserId`, etc.) |
-| `searchuserid` | user ID | | Search for a user by ID, name-change proof (sets `Discord.found.*`) |
-| `listusers` | channel name | | List users in a channel |
-| `joinvoice` | channel name | | Join a voice channel |
-| `leavevoice` | | | Leave current voice channel |
-| `mute` | | | Toggle self-mute |
-| `deafen` | | | Toggle self-deafen |
-| `calluser` | user name | | Open Discord DM and initiate call (keyboard automation) |
-| `callbyid` | user ID | | Look up user by ID, open DM via quick switcher, call with Ctrl+' |
+| Context | Description |
+|---------|-------------|
+| `connect` | Connect to Discord |
+| `disconnect` | Disconnect from Discord |
+| `sendmessage:<channel>:<message>` | Send a message to a channel |
+| `readmessages:<channel>:<count>` | Read messages (stored in `Discord.LastMessages`) |
+| `senddm:<user>:<message>` | Send a DM to a user |
+| `searchuser:<name>` | Search for a user (sets `Discord.found.UserId`, etc.) |
+| `searchuserid:<user ID>` | Search for a user by ID, name-change proof (sets `Discord.found.*`) |
+| `listusers:<channel>` | List users in a channel |
+| `joinvoice:<channel>` | Join a voice channel |
+| `leavevoice` | Leave current voice channel |
+| `mute` | Toggle self-mute |
+| `deafen` | Toggle self-deafen |
+| `calluser:<name>` | Open Discord DM and initiate call (keyboard automation) |
+| `callbyid:<user ID>` | Look up user by ID, open DM via quick switcher, call with Ctrl+' |
 
 ### VoiceAttack Variables Set
 
@@ -100,11 +104,12 @@ Use the **Execute an External Plugin Function** action in VoiceAttack with the f
 
 Create these in VoiceAttack under **Other > Advanced > Execute an External Plugin Function**:
 
-1. **"Send message to general"** - Context: `sendmessage`, Text1: `general`, Text2: `{TXT}` (dictation)
-2. **"Read chat"** - Context: `readmessages`, Text1: `general`, Text2: `10`
-3. **"Call [name]"** - Context: `calluser`, Text1: `{TXT}`
-4. **"Join voice [channel]"** - Context: `joinvoice`, Text1: `{TXT}`
+1. **"Send message to general"** - Context: `sendmessage:general:{TXT}` (dictation)
+2. **"Read chat"** - Context: `readmessages:general:10`
+3. **"Call [name]"** - Context: `calluser:{TXT}`
+4. **"Join voice [channel]"** - Context: `joinvoice:{TXT}`
 5. **"Mute"** - Context: `mute`
+6. **"Call that person"** - Context: `callbyid:832258686764056657`
 
 ## Limitations
 

@@ -86,8 +86,8 @@ public class MessagingCommands
             var result = string.Join("\n", messageList.Select(m =>
                 $"[{m.CreatedAt:HH:mm}] {m.Author.Username}: {m.Content}"));
 
-            _va.SetVar("Discord.LastMessages", result);
-            _va.SetVar("Discord.LastMessageCount", messageList.Count.ToString());
+            _va.SetText("Discord.LastMessages", result);
+            _va.SetText("Discord.LastMessageCount", messageList.Count.ToString());
             _va.WriteToLog($"Discord: Read {messageList.Count} messages from #{channelName}.", "green");
         }
         catch (Exception ex)

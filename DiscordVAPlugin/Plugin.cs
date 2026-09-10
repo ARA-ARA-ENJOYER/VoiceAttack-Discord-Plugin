@@ -98,10 +98,16 @@ public class Plugin
                 return;
             }
 
-            string context = vaProxy.Context?.ToString() ?? "";
-            string text1 = vaProxy.Text1?.ToString() ?? "";
-            string text2 = vaProxy.Text2?.ToString() ?? "";
-            string text3 = vaProxy.Text3?.ToString() ?? "";
+            // V4 interface: only Context is passed directly (Text1/2/3 do not exist).
+            // Convention: Context carries "action:arg1:arg2" (colon-delimited).
+            // Context parses {TXT:...} tokens, so dictation/variables can be embedded.
+            string fullContext = vaProxy.Context?.ToString() ?? "";
+            var parts = fullContext.Split(new[] { ':' }, StringSplitOptions.None);
+
+            string context = parts.Length > 0 ? parts[0].Trim() : "";
+            string text1 = parts.Length > 1 ? parts[1].Trim() : "";
+            string text2 = parts.Length > 2 ? parts[2].Trim() : "";
+            string text3 = parts.Length > 3 ? string.Join(":", parts.Skip(3)).Trim() : "";
 
             _ = Task.Run(async () =>
             {
