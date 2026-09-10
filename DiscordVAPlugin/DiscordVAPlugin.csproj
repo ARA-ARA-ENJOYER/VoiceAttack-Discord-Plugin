@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>DiscordVAPlugin</AssemblyName>
+    <AssemblyName>VA.DiscordVAPlugin</AssemblyName>
     <RootNamespace>DiscordVAPlugin</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
