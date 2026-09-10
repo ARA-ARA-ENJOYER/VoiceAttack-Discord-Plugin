@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>VoiceAttack-Discord-Plugin-Setup</AssemblyName>
+    <RootNamespace>VoiceAttackDiscordPlugin.Setup</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Allows building this Windows-only wizard on non-Windows machines (CI publishes on Windows) -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Version>1.0.0</Version>
+    <Description>Guided installer for the VoiceAttack Discord Plugin</Description>
+  </PropertyGroup>
+
+  <!--
+    Embed the built plugin payload so the setup is a single file.
+    IMPORTANT: build the plugin in Release FIRST
+    (dotnet build VoiceAttackDiscordPlugin/VoiceAttackDiscordPlugin.csproj -c Release)
+    so these files exist when the wizard compiles.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\VoiceAttackDiscordPlugin\bin\Release\net8.0\*.dll" LogicalName="Payload.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\VoiceAttackDiscordPlugin\bin\Release\net8.0\*.json" LogicalName="Payload.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\VoiceAttackDiscordPlugin\config.example.json" LogicalName="Payload.config.example.json" />
+  </ItemGroup>
+
+</Project>
