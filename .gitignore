@@ -43,6 +43,5 @@ TestResult.xml
 Thumbs.db
 *~
 
-## VoiceAttack deploy config with real secrets (keep placeholder in repo)
-# Uncomment if config.json ever holds a real bot token:
-# DiscordVAPlugin/config.json
+## Local-only secrets (real bot token lives here, never committed)
+DiscordVAPlugin/config.json
