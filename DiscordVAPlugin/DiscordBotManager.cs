@@ -204,6 +204,30 @@ public class DiscordBotManager : IDisposable
         }
     }
 
+    /// <summary>
+    /// Counts distinct users (by ID) across all guilds sharing a display name.
+    /// Used to detect Quick Switcher ambiguity: names are not unique, usernames are.
+    /// </summary>
+    public async Task<int> CountDistinctUsersByDisplayNameAsync(string displayName)
+    {
+        if (_client?.Guilds == null || string.IsNullOrWhiteSpace(displayName)) return 0;
+
+        var ids = new HashSet<ulong>();
+        foreach (var guild in _client.Guilds)
+        {
+            var users = await guild.GetUsersAsync().FlattenAsync();
+            foreach (var u in users)
+            {
+                if (string.Equals(u.GlobalName ?? u.Username, displayName, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(u.DisplayName, displayName, StringComparison.OrdinalIgnoreCase))
+                {
+                    ids.Add(u.Id);
+                }
+            }
+        }
+        return ids.Count;
+    }
+
     public async Task<IReadOnlyCollection<IGuildUser>> GetChannelUsersAsync(string channelName)
     {
         if (_client?.Guilds == null)

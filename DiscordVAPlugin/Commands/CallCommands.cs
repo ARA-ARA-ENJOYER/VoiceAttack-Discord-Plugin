@@ -79,11 +79,63 @@ public class CallCommands
         string displayName = user.GlobalName ?? user.Username;
         _va.WriteToLog($"Discord: Initiating call to '{displayName}' (ID: {user.Id}) via keyboard automation...", "blue");
 
+        // Usernames are unique; display names are not. If the display name is shared,
+        // navigate by @username instead so the Quick Switcher lands on the right DM.
+        string searchText = displayName;
+        int nameMatches = await _botManager.CountDistinctUsersByDisplayNameAsync(displayName);
+        if (nameMatches > 1)
+        {
+            _va.WriteToLog($"Discord: Warning: {nameMatches} users share the display name '{displayName}'. Navigating by unique username '@{user.Username}' instead.", "yellow");
+            searchText = "@" + user.Username;
+        }
+
         try
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                await InitiateCallByIdWindows(displayName);
+                await InitiateCallByIdWindows(searchText, displayName);
+            }
+            else
+            {
+                _va.WriteToLog("Discord: Call automation only supported on Windows.", "red");
+            }
+        }
+        catch (Exception ex)
+        {
+            _va.WriteToLog($"Discord: Call initiation failed: {ex.Message}", "red");
+        }
+    }
+
+    public async Task CallByUsernameAsync(string userName)
+    {
+        if (string.IsNullOrWhiteSpace(userName))
+        {
+            _va.WriteToLog("Discord: No user name provided for callbyusername.", "yellow");
+            return;
+        }
+
+        if (!_botManager.IsConnected)
+        {
+            _va.WriteToLog("Discord: Not connected. Use 'connect' context first.", "red");
+            return;
+        }
+
+        var user = await _botManager.FindUserAsync(userName);
+        if (user == null)
+        {
+            _va.WriteToLog($"Discord: User '{userName}' not found for call.", "red");
+            return;
+        }
+
+        // Usernames are unique, so navigate by @username for an exact Quick Switcher hit
+        string displayName = user.GlobalName ?? user.Username;
+        _va.WriteToLog($"Discord: Initiating call to '{displayName}' via keyboard automation...", "blue");
+
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                await InitiateCallByIdWindows("@" + user.Username, displayName);
             }
             else
             {
@@ -128,7 +180,7 @@ public class CallCommands
         }
     }
 
-    private async Task InitiateCallByIdWindows(string displayName)
+    private async Task InitiateCallByIdWindows(string searchText, string displayName)
     {
         var discordHwnd = FindDiscordWindow();
         if (discordHwnd == IntPtr.Zero) return;
@@ -142,7 +194,7 @@ public class CallCommands
             PressCombo(VK_CONTROL, VkFor('k'));
             await Task.Delay(400);
 
-            await TypeTextAsync(displayName);
+            await TypeTextAsync(searchText);
             await Task.Delay(800);
 
             PressKey(VK_RETURN);

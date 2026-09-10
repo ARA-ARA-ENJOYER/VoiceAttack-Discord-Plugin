@@ -1,74 +1,50 @@
-# DiscordVAPlugin
+# 🎙️ DiscordVAPlugin
 
-A VoiceAttack V2 plugin that connects VoiceAttack to Discord via a Discord Bot. Send messages, read channels, control voice channels, search users, and initiate calls -- all via voice commands.
+[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
+[![VoiceAttack V2](https://img.shields.io/badge/VoiceAttack-V2%20(V4%20API)-2b9d48)](https://voiceattack.com/)
+[![Discord.Net](https://img.shields.io/badge/Discord.Net-3.15-5865F2)](https://github.com/discord-net/Discord.Net)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Windows](https://img.shields.io/badge/Platform-Windows-0078D4)](https://github.com/ARA-ARA-ENJOYER/VoiceAttack-Discord-Plugin)
 
-## Features
+> A VoiceAttack V2 plugin that connects VoiceAttack to Discord via a Discord Bot.
+> Send messages, read channels, control voice channels, search users, and initiate
+> calls — all via voice commands. 🗣️➡️💬
 
-- **Send messages** to any Discord text channel
-- **Read messages** from channels into VoiceAttack variables
-- **Send DMs** to specific users
-- **Join/leave voice channels**
-- **Mute/unmute** and **deafen/undeafen** in voice
-- **Search users** by name
-- **List users** in a channel
-- **Initiate calls** via keyboard automation (Windows only)
+---
 
-## Prerequisites
+## 🚀 Quick Start
 
-- VoiceAttack V2 (with Plugin Support enabled)
-- .NET 8 Runtime
-- A Discord Bot (create one at https://discord.com/developers)
+New here? Follow the full walkthrough: **[📖 SETUP.md](SETUP.md)** — bot creation,
+deployment, your first voice command, and troubleshooting.
 
-## Setup
-
-### 1. Create a Discord Bot
-
-1. Go to https://discord.com/developers/applications
-2. Click **New Application** and give it a name
-3. Go to the **Bot** tab and click **Reset Token** to get your bot token
-4. Under **Privileged Gateway Intents**, enable:
-   - **Presence Intent**
-   - **Server Members Intent**
-   - **Message Content Intent**
-5. Go to **OAuth2 > URL Generator**
-6. Select scopes: `bot`, `applications.commands`
-7. Select permissions: Send Messages, Read Message History, Connect, Speak, Use Voice Activity
-8. Copy the generated URL and open it in your browser to invite the bot to your server
-
-### 2. Install the Plugin
-
-1. Build the project or download the release
-2. Copy the entire output folder to: `C:\Program Files (x86)\VoiceAttack\Apps\DiscordVAPlugin\`
-3. Open VoiceAttack, go to **Options** (wrench icon) > **General**
-4. Enable **Plugin Support**
-5. Restart VoiceAttack
-
-### 3. Configure
-
-Edit `config.json` in the plugin folder:
-
-```json
-{
-  "BotToken": "YOUR_BOT_TOKEN_HERE",
-  "DefaultGuildId": 0,
-  "DefaultChannelName": "general",
-  "AutoConnect": true,
-  "LogLevel": "Info"
-}
+```text
+1. Create a Discord bot + invite it        → SETUP.md Part 1
+2. Copy plugin files to VoiceAttack\Apps   → SETUP.md Part 2
+3. Fill in config.json (token stays local) → SETUP.md Part 2
+4. Enable Plugin Support + restart         → SETUP.md Part 3
+5. Say "connect to discord"                → SETUP.md Part 4
 ```
 
-- **BotToken**: Your Discord bot token from step 1
-- **DefaultGuildId**: Your server's Guild ID (right-click server name > Copy Server ID with Developer Mode on)
-- **DefaultChannelName**: Default channel to use when none specified
-- **AutoConnect**: Connect to Discord automatically when VoiceAttack starts
+---
 
-## Usage
+## ✨ Features
 
-Use the **Execute an External Plugin Function** action in VoiceAttack. Under the V4 plugin
-interface, everything is passed in the single **Context** field as `action:arg1:arg2`
-(colon-delimited; extra colons stay in the last argument). The Context field parses
-`{TXT:...}` tokens, so dictation and variables can be embedded. Ignore the legacy
-SmallInt/Text/Integer/Decimal/Boolean/Date input boxes — they do nothing for V4 plugins.
+| | |
+|---|---|
+| 💬 **Messaging** | Send messages to any text channel, send DMs, read recent chat into variables |
+| 🎧 **Voice** | Join/leave voice channels, toggle self-mute and self-deafen |
+| 🔍 **Users** | Search by name **or by ID** (name-change proof), list channel members |
+| 📞 **Calls** | Open a DM and start a voice call via keyboard automation (Windows only) |
+| 🛡️ **Collision-safe** | Duplicate display names are detected — falls back to unique `@username` |
+
+---
+
+## 🧩 Action Reference
+
+Actions run through **Execute an External Plugin Function**. Under the V4 plugin
+interface, everything goes in the single **Context** field as `action:arg1:arg2`
+(colon-delimited). The Context field parses `{TXT:...}` tokens, so dictation and
+variables work inline. Ignore the legacy variable input boxes — they do nothing.
 
 | Context | Description |
 |---------|-------------|
@@ -84,10 +60,11 @@ SmallInt/Text/Integer/Decimal/Boolean/Date input boxes — they do nothing for V
 | `leavevoice` | Leave current voice channel |
 | `mute` | Toggle self-mute |
 | `deafen` | Toggle self-deafen |
-| `calluser:<name>` | Open Discord DM and initiate call (keyboard automation) |
+| `calluser:<name>` | Open Discord DM and initiate call (legacy flow) |
 | `callbyid:<user ID>` | Look up user by ID, open DM via quick switcher, call with Ctrl+' |
+| `callbyusername:<name>` | Same new-style call flow, matched by name |
 
-### VoiceAttack Variables Set
+### 📥 VoiceAttack Variables Set
 
 | Variable | Description |
 |----------|-------------|
@@ -100,32 +77,47 @@ SmallInt/Text/Integer/Decimal/Boolean/Date input boxes — they do nothing for V
 | `Discord.found.DisplayName` | Found user's display name |
 | `Discord.found.Username` | Found user's username |
 
-## Example Voice Commands
+Read them back with `{TXT:...}`, e.g. TTS: `Last messages: {TXT:Discord.LastMessages}`.
 
-Create these in VoiceAttack under **Other > Advanced > Execute an External Plugin Function**:
+---
 
-1. **"Send message to general"** - Context: `sendmessage:general:{TXT}` (dictation)
-2. **"Read chat"** - Context: `readmessages:general:10`
-3. **"Call [name]"** - Context: `calluser:{TXT}`
-4. **"Join voice [channel]"** - Context: `joinvoice:{TXT}`
-5. **"Mute"** - Context: `mute`
-6. **"Call that person"** - Context: `callbyid:832258686764056657`
+## 💡 Example Voice Commands
 
-## Limitations
+Create these under **Other > Advanced > Execute an External Plugin Function**:
 
-- **Call feature**: Uses keyboard shortcuts (Ctrl+U to search, Ctrl+Shift+C to call). Requires Discord desktop app to be open. May break if Discord updates its UI.
-- **Voice channels**: Bot must have Connect and Speak permissions.
-- **Rate limits**: Discord API has rate limits. The plugin handles retries but excessive use may be throttled.
-- **Windows only**: Call automation via keyboard shortcuts only works on Windows.
+1. **"Send message to general"** — Context: `sendmessage:general:{TXT}` (dictation)
+2. **"Read chat"** — Context: `readmessages:general:10`, then TTS `{TXT:Discord.LastMessages}`
+3. **"Call [name]"** — Context: `callbyusername:{TXT}`
+4. **"Call that person"** — Context: `callbyid:832258686764056657`
+5. **"Join voice [channel]"** — Context: `joinvoice:{TXT}`
+6. **"Mute"** — Context: `mute`
 
-## Building from Source
+---
+
+## ⚠️ Limitations
+
+- **Calls**: keyboard automation (`Ctrl+K` → DM → `Ctrl+'`). Requires the Discord desktop app open. May break if Discord updates its UI.
+- **Duplicate display names**: detected automatically — the plugin warns and navigates by unique `@username` instead. Prefer `callbyid` over `calluser` when you have the ID.
+- **Voice channels**: bot needs Connect and Speak permissions.
+- **Rate limits**: Discord API throttles abuse; the plugin retries but go easy.
+- **Windows only**: call automation works on Windows.
+
+---
+
+## 🛠️ Building from Source
 
 ```bash
-dotnet build
+dotnet build -c Release
 ```
 
-The output will be in `bin/Debug/net8.0/`. Copy that entire folder to your VoiceAttack Apps directory.
+Output lands in `DiscordVAPlugin/bin/Release/net8.0/`. Copy that folder plus your
+local `config.json` to `C:\Program Files\VoiceAttack\Apps\VA.DiscordVAPlugin\`.
 
-## License
+> **Secrets:** `config.json` (your real bot token) is git-ignored and never committed.
+> The repo ships `config.example.json` as the documented template. See [SETUP.md](SETUP.md).
 
-MIT
+---
+
+## 📄 License
+
+MIT — see [LICENSE](LICENSE).

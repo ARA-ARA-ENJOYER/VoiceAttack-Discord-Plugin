@@ -75,6 +75,9 @@ public class CommandRouter
             case "callbyid":
                 await _call.CallUserByIdAsync(text1);
                 break;
+            case "callbyusername":
+                await _call.CallByUsernameAsync(text1);
+                break;
             default:
                 _va.WriteToLog($"DiscordVAPlugin: Unknown context '{context}'.", "yellow");
                 break;
