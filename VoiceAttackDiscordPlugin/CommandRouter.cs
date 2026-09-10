@@ -1,6 +1,6 @@
-using DiscordVAPlugin.Commands;
+using VoiceAttackDiscordPlugin.Commands;
 
-namespace DiscordVAPlugin;
+namespace VoiceAttackDiscordPlugin;
 
 public class CommandRouter
 {
@@ -25,7 +25,7 @@ public class CommandRouter
     {
         if (string.IsNullOrWhiteSpace(context))
         {
-            _va.WriteToLog("DiscordVAPlugin: No context provided.", "yellow");
+            _va.WriteToLog("VoiceAttackDiscordPlugin: No context provided.", "yellow");
             return;
         }
 
@@ -79,7 +79,7 @@ public class CommandRouter
                 await _call.CallByUsernameAsync(text1);
                 break;
             default:
-                _va.WriteToLog($"DiscordVAPlugin: Unknown context '{context}'.", "yellow");
+                _va.WriteToLog($"VoiceAttackDiscordPlugin: Unknown context '{context}'.", "yellow");
                 break;
         }
     }
@@ -88,18 +88,18 @@ public class CommandRouter
     {
         if (_botManager.IsConnected)
         {
-            _va.WriteToLog("DiscordVAPlugin: Already connected.", "yellow");
+            _va.WriteToLog("VoiceAttackDiscordPlugin: Already connected.", "yellow");
             return;
         }
 
         try
         {
             await _botManager.ConnectAsync();
-            _va.WriteToLog("DiscordVAPlugin: Connected to Discord.", "green");
+            _va.WriteToLog("VoiceAttackDiscordPlugin: Connected to Discord.", "green");
         }
         catch (Exception ex)
         {
-            _va.WriteToLog($"DiscordVAPlugin: Connection failed: {ex.Message}", "red");
+            _va.WriteToLog($"VoiceAttackDiscordPlugin: Connection failed: {ex.Message}", "red");
         }
     }
 
@@ -107,18 +107,18 @@ public class CommandRouter
     {
         if (!_botManager.IsConnected)
         {
-            _va.WriteToLog("DiscordVAPlugin: Not connected.", "yellow");
+            _va.WriteToLog("VoiceAttackDiscordPlugin: Not connected.", "yellow");
             return;
         }
 
         try
         {
             await _botManager.DisconnectAsync();
-            _va.WriteToLog("DiscordVAPlugin: Disconnected from Discord.", "green");
+            _va.WriteToLog("VoiceAttackDiscordPlugin: Disconnected from Discord.", "green");
         }
         catch (Exception ex)
         {
-            _va.WriteToLog($"DiscordVAPlugin: Disconnect failed: {ex.Message}", "red");
+            _va.WriteToLog($"VoiceAttackDiscordPlugin: Disconnect failed: {ex.Message}", "red");
         }
     }
 }

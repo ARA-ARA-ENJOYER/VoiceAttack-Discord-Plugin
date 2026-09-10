@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>VA.DiscordVAPlugin</AssemblyName>
-    <RootNamespace>DiscordVAPlugin</RootNamespace>
+    <AssemblyName>VA.VoiceAttackDiscordPlugin</AssemblyName>
+    <RootNamespace>VoiceAttackDiscordPlugin</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDynamicLoading>true</EnableDynamicLoading>

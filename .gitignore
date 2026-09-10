@@ -44,4 +44,4 @@ Thumbs.db
 *~
 
 ## Local-only secrets (real bot token lives here, never committed)
-DiscordVAPlugin/config.json
+VoiceAttackDiscordPlugin/config.json

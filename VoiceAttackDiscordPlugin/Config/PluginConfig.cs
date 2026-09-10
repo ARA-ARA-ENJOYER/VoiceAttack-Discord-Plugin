@@ -1,7 +1,7 @@
 using System.Reflection;
 using Newtonsoft.Json;
 
-namespace DiscordVAPlugin.Config;
+namespace VoiceAttackDiscordPlugin.Config;
 
 public class PluginConfig
 {
@@ -27,7 +27,7 @@ public class PluginConfig
         {
             var defaultConfig = new PluginConfig();
             Save(defaultConfig, va);
-            va.WriteToLog("DiscordVAPlugin: config.json created with default values. Please configure your bot token.", "yellow");
+            va.WriteToLog("VoiceAttackDiscordPlugin: config.json created with default values. Please configure your bot token.", "yellow");
             return defaultConfig;
         }
 
@@ -37,14 +37,14 @@ public class PluginConfig
             var config = JsonConvert.DeserializeObject<PluginConfig>(json);
             if (config == null)
             {
-                va.WriteToLog("DiscordVAPlugin: Failed to parse config.json, using defaults.", "red");
+                va.WriteToLog("VoiceAttackDiscordPlugin: Failed to parse config.json, using defaults.", "red");
                 return new PluginConfig();
             }
             return config;
         }
         catch (Exception ex)
         {
-            va.WriteToLog($"DiscordVAPlugin: Config load error: {ex.Message}", "red");
+            va.WriteToLog($"VoiceAttackDiscordPlugin: Config load error: {ex.Message}", "red");
             return new PluginConfig();
         }
     }

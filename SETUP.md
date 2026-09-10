@@ -1,7 +1,13 @@
-# 🎙️ DiscordVAPlugin — VoiceAttack Setup Guide
+# 🎙️ VoiceAttack Discord Plugin — Setup Guide
 
 > Control Discord with your voice: send messages, read chat, manage voice channels,
 > and call people — all through VoiceAttack commands powered by a Discord bot.
+
+> **Easiest path (recommended):** download **`VoiceAttack-Discord-Plugin-Setup.exe`**
+> from the [Releases page](https://github.com/ARA-ARA-ENJOYER/VoiceAttack-Discord-Plugin/releases),
+> double-click it, and follow the wizard. It finds VoiceAttack, installs the files,
+> validates your bot token, and writes `config.json` for you. The manual steps below
+> are for advanced users.
 
 ---
 
@@ -39,10 +45,12 @@
 1. Build the project (`dotnet build -c Release`) or grab the latest release.
 2. Copy the **entire output folder** to:
    ```
-   C:\Program Files\VoiceAttack\Apps\VA.DiscordVAPlugin\
+   C:\Program Files\VoiceAttack\Apps\VA.VoiceAttackDiscordPlugin\
    ```
-   ⚠️ The folder **must** be named `VA.DiscordVAPlugin` and contain `VA.DiscordVAPlugin.dll` —
+   ⚠️ The folder **must** be named `VA.VoiceAttackDiscordPlugin` and contain `VA.VoiceAttackDiscordPlugin.dll` —
    VoiceAttack only detects DLLs with the `VA.` prefix.
+   Upgrading from an older version? Delete the legacy `Apps\VA.DiscordVAPlugin\` folder first
+   (copy its `config.json` aside so you keep your token).
 3. Configure the bot — copy the template and fill in your secrets:
    ```
    copy config.example.json config.json
@@ -67,8 +75,8 @@
 3. **Restart VoiceAttack.**
 4. Open the log (wrench → Log) and confirm:
    ```
-   DiscordVAPlugin initialized. Bot token configured: True
-   DiscordVAPlugin connected to Discord automatically.
+   VoiceAttackDiscordPlugin initialized. Bot token configured: True
+   VoiceAttackDiscordPlugin connected to Discord automatically.
    ```
 
 ---
@@ -77,7 +85,7 @@
 
 1. VoiceAttack main window → **New Command** → **When I say:** `connect to discord`.
 2. Click **+** in Actions → **Other → Advanced → Execute an External Plugin Function**.
-3. Pick **DiscordVAPlugin** in the dropdown.
+3. Pick **VoiceAttack Discord Plugin** in the dropdown.
 4. In **Plugin Context** type: `connect`
    - ℹ️ Under the V4 plugin interface, **everything goes in this one Context field**
      as `action:arg1:arg2`. Ignore the legacy SmallInt/Text/Integer boxes — they do nothing.
@@ -129,7 +137,7 @@ able to find the person (you share a server or have an existing DM).
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Plugin not listed at all | Folder/DLL missing the `VA.` prefix | Folder must be `VA.DiscordVAPlugin`, DLL `VA.DiscordVAPlugin.dll` |
+| Plugin not listed at all | Folder/DLL missing the `VA.` prefix | Folder must be `VA.VoiceAttackDiscordPlugin`, DLL `VA.VoiceAttackDiscordPlugin.dll` |
 | `...does not contain a definition for 'Text1'` | Old build using the legacy interface | Update to the latest build; put everything in the Context field |
 | `...does not contain a definition for 'PluginDir'` | Old build | Update to the latest build |
 | `Not connected. Use 'connect' first` | Bot offline | Run a `connect` command, or set `AutoConnect: true` |

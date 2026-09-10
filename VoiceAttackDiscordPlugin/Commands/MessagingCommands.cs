@@ -1,6 +1,6 @@
 using Discord;
 
-namespace DiscordVAPlugin.Commands;
+namespace VoiceAttackDiscordPlugin.Commands;
 
 public class MessagingCommands
 {

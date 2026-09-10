@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace DiscordVAPlugin.Commands;
+namespace VoiceAttackDiscordPlugin.Commands;
 
 public class CallCommands
 {

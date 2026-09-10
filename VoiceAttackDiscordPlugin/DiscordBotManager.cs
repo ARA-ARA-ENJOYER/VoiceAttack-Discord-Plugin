@@ -1,9 +1,9 @@
 using Discord;
 using Discord.Net;
 using Discord.WebSocket;
-using DiscordVAPlugin.Config;
+using VoiceAttackDiscordPlugin.Config;
 
-namespace DiscordVAPlugin;
+namespace VoiceAttackDiscordPlugin;
 
 public class DiscordBotManager : IDisposable
 {

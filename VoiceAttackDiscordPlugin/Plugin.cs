@@ -1,11 +1,11 @@
-using DiscordVAPlugin.Config;
+using VoiceAttackDiscordPlugin.Config;
 
-namespace DiscordVAPlugin;
+namespace VoiceAttackDiscordPlugin;
 
 public class Plugin
 {
     private static readonly Guid PluginId = new("{A7B8C9D0-E1F2-3456-7890-ABCDEF123456}");
-    private const string PluginName = "DiscordVAPlugin";
+    private const string PluginName = "VoiceAttackDiscordPlugin";
     private const string PluginVersion = "1.0.0";
 
     private static dynamic? _va;
@@ -15,7 +15,7 @@ public class Plugin
 
     public static Guid VA_Id() => PluginId;
 
-    public static string VA_DisplayName() => PluginName;
+    public static string VA_DisplayName() => "VoiceAttack Discord Plugin";
 
     public static string VA_DisplayInfo()
     {

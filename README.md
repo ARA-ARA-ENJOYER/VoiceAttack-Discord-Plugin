@@ -1,4 +1,4 @@
-# 🎙️ DiscordVAPlugin
+# 🎙️ VoiceAttack Discord Plugin
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
 [![VoiceAttack V2](https://img.shields.io/badge/VoiceAttack-V2%20(V4%20API)-2b9d48)](https://voiceattack.com/)
@@ -9,6 +9,10 @@
 > A VoiceAttack V2 plugin that connects VoiceAttack to Discord via a Discord Bot.
 > Send messages, read channels, control voice channels, search users, and initiate
 > calls — all via voice commands. 🗣️➡️💬
+
+> **Non-technical? Start here:** download **`VoiceAttack-Discord-Plugin-Setup.exe`**
+> from the [Releases page](https://github.com/ARA-ARA-ENJOYER/VoiceAttack-Discord-Plugin/releases),
+> double-click it, and follow the wizard — no building, no manual file copying. 🪄
 
 ---
 
@@ -110,8 +114,9 @@ Create these under **Other > Advanced > Execute an External Plugin Function**:
 dotnet build -c Release
 ```
 
-Output lands in `DiscordVAPlugin/bin/Release/net8.0/`. Copy that folder plus your
-local `config.json` to `C:\Program Files\VoiceAttack\Apps\VA.DiscordVAPlugin\`.
+Output lands in `VoiceAttackDiscordPlugin/bin/Release/net8.0/`. Copy that folder plus your
+local `config.json` to `C:\Program Files\VoiceAttack\Apps\VA.VoiceAttackDiscordPlugin\`.
+Prefer the wizard? See the one-click note at the top.
 
 > **Secrets:** `config.json` (your real bot token) is git-ignored and never committed.
 > The repo ships `config.example.json` as the documented template. See [SETUP.md](SETUP.md).
