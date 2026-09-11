@@ -38,9 +38,9 @@ public class CommandContextTests
     [Fact]
     public void Parse_TrimsWhitespace()
     {
-        var ctx = CommandContext.Parse("  callbyid :  832258686764056657  ");
+        var ctx = CommandContext.Parse("  callbyid :  123456789012345678  ");
         Assert.Equal("callbyid", ctx.Action);
-        Assert.Equal("832258686764056657", ctx.Arg1);
+        Assert.Equal("123456789012345678", ctx.Arg1);
     }
 
     [Fact]

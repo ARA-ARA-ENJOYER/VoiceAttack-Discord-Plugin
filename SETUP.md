@@ -108,8 +108,8 @@
 |---|---|---|
 | *"Send message to general saying hello"* | `sendmessage:general:{TXT}` | Sends your dictated text to `#general` |
 | *"Read chat"* | `readmessages:general:5` + TTS `{TXT:Discord.LastMessages}` | Reads back the last 5 messages |
-| *"Find user 832..."* | `searchuserid:832258686764056657` | Looks up by ID, fills `Discord.found.*` |
-| *"Call that person"* | `callbyid:832258686764056657` | Opens their DM, starts a call (`Ctrl+'`) |
+| *"Find user by ID"* | `searchuserid:123456789012345678` | Looks up by ID, fills `Discord.found.*` |
+| *"Call that person"* | `callbyid:123456789012345678` | Opens their DM, starts a call (`Ctrl+'`) |
 | *"Call them by name"* | `callbyname:{TXT}` | Opens their DM by display name, starts a call (`Ctrl+'`) |
 | *"Mute"* | `mute` | Toggles YOUR microphone (`Ctrl+Shift+M`, Windows) |
 | *"Mute the bot"* | `botmute` | Toggles the bot's server-side mute |

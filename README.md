@@ -108,7 +108,7 @@ Create these under **Other > Advanced > Execute an External Plugin Function**:
 1. **"Send message to general"** — Context: `sendmessage:general:{TXT}` (dictation)
 2. **"Read chat"** — Context: `readmessages:general:10`, then TTS `{TXT:Discord.LastMessages}`
 3. **"Call [name]"** — Context: `callbyusername:{TXT}`
-4. **"Call that person"** — Context: `callbyid:832258686764056657`
+4. **"Call that person"** — Context: `callbyid:123456789012345678`
 5. **"Join voice [channel]"** — Context: `joinvoice:{TXT}`
 6. **"Mute"** — Context: `mute`
 
