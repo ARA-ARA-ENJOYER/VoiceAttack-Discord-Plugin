@@ -107,7 +107,9 @@
 | *"Read chat"* | `readmessages:general:5` + TTS `{TXT:Discord.LastMessages}` | Reads back the last 5 messages |
 | *"Find user 832..."* | `searchuserid:832258686764056657` | Looks up by ID, fills `Discord.found.*` |
 | *"Call that person"* | `callbyid:832258686764056657` | Opens their DM, starts a call (`Ctrl+'`) |
-| *"Mute"* | `mute` | Toggles self-mute |
+| *"Call them by name"* | `callbyname:{TXT}` | Opens their DM by display name, starts a call (`Ctrl+'`) |
+| *"Mute"* | `mute` | Toggles YOUR microphone (`Ctrl+Shift+M`, Windows) |
+| *"Mute the bot"* | `botmute` | Toggles the bot's server-side mute |
 | *"Join voice lobby"* | `joinvoice:lobby` | Joins the `lobby` voice channel |
 
 **Reading results back:** after `readmessages`, add a **Text To Speech** action:
@@ -118,20 +120,30 @@ Full action reference lives in the [README](README.md#action-reference).
 
 ---
 
-## Part 6 — 📞 Calling Someone By ID (Deep Dive)
+## Part 6 — 📞 Calling Someone (Deep Dive)
 
-`callbyid:<user ID>` runs this sequence:
+Three call actions, one flow. Each resolves the person, jumps to their DM via the
+Quick Switcher (`Ctrl+K`), then starts the call (`Ctrl+'`):
 
-1. **API lookup** — resolves the user ID to their current display name (IDs never change, names do).
-2. **Uniqueness check** — counts how many people share that display name.
-   - Unique → types the display name into the Quick Switcher.
-   - Shared → logs a ⚠️ warning and types the unique `@username` instead.
-3. **Keyboard automation** — `Ctrl+K` → types the name → `Enter` (opens the DM) → waits 1s → `Ctrl+'` (starts the call).
+| Action | What you type in the Quick Switcher | When to use it |
+|---|---|---|
+| `callbyid:<user ID>` | Always `@username` — the unique handle | Whenever you have the ID (IDs never change, names do) |
+| `callbyusername:<name>` | The raw username (no `@`) | You know their username |
+| `callbyname:<name>` | Their display name; unique `@username` if duplicated | You know the friendly name people see |
+
+Steps for every call:
+
+1. **Lookup** — by ID (`callbyid`) or by name (`callbyusername`/`callbyname`).
+2. **Keyboard automation** — `Ctrl+K` → types the text above → `Enter` (opens the DM) → waits 1s → `Ctrl+'` (starts the call).
 
 > **Same display name?** Usernames are unique on Discord, display names are not.
-> The plugin detects collisions automatically and falls back to `@username`, so the
-> Quick Switcher lands on the right DM. Prefer `callbyid` over `calluser` whenever
-> you have the ID; use `callbyusername:<name>` for the same new-style flow by name.
+> If several people share a display name, `callbyname` logs a ⚠️ warning and types
+> the unique `@username` instead, so the Quick Switcher lands on the right DM.
+> Prefer `callbyid` over the name-based calls whenever you have the ID.
+
+> **Nobody found?** If a name search comes up empty, the plugin warns you they may
+> have renamed — grab their user ID (`right-click → Copy User ID`) and use
+> `callbyid:<ID>`, which is name-change proof.
 
 Requirements: Discord desktop app open and logged in, and the Quick Switcher must be
 able to find the person (you share a server or have an existing DM).
@@ -148,7 +160,7 @@ able to find the person (you share a server or have an existing DM).
 | `Not connected. Use 'connect' first` | Bot offline | Run a `connect` command, or set `AutoConnect: true` |
 | `User ID ... not found` | Wrong ID, or bot shares no server with that user | Verify the ID; invite the bot to a shared server |
 | Call doesn't start | Discord not focused / shortcut changed | Keep Discord open; retry with it focused |
-| Wrong person called | Duplicate display name, old build | Update — new builds warn and fall back to `@username` |
+| Wrong person called | Duplicate display name with `callbyname` | Check the log — it warns and falls back to `@username`; use `callbyid:<ID>` to be exact |
 
 ---
 

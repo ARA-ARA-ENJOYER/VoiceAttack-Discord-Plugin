@@ -36,7 +36,7 @@ deployment, your first voice command, and troubleshooting.
 | | |
 |---|---|
 | 💬 **Messaging** | Send messages to any text channel, send DMs, read recent chat into variables |
-| 🎧 **Voice** | Join/leave voice channels, toggle self-mute and self-deafen |
+| 🎧 **Voice** | Join/leave voice channels, toggle your mute/deafen or the bot's (`botmute`/`botdeafen`) |
 | 🔍 **Users** | Search by name **or by ID** (name-change proof), list channel members |
 | 📞 **Calls** | Open a DM and start a voice call via keyboard automation (Windows only) |
 | 🛡️ **Collision-safe** | Duplicate display names are detected — falls back to unique `@username` |
@@ -112,7 +112,7 @@ Create these under **Other > Advanced > Execute an External Plugin Function**:
 - **Changed names**: if `callbyusername`/`callbyname` can't find someone, they warn you they may have renamed — use `callbyid:<ID>` (IDs never change).
 - **Voice channels**: bot needs Connect and Speak permissions.
 - **Rate limits**: Discord API throttles abuse; the plugin retries but go easy.
-- **Windows only**: call automation works on Windows.
+- **Windows only**: call automation and your `mute`/`deafen` toggles work on Windows.
 
 ---
 
