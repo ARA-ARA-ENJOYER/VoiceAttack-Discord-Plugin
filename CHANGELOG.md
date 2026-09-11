@@ -7,6 +7,30 @@ extracts the matching `## [x.y.z]` block into the GitHub release notes automatic
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-09-11
+
+### Fixed
+- `sendmessage`/`senddm` no longer silently drop message text after a colon
+  (URLs, times) — the parsed tail is rejoined before sending.
+- Default-channel fallback documented correctly: use the double-colon form
+  (`sendmessage::<message>`); a single colon puts the text in the channel slot.
+- "Connected" is now logged only after the Discord gateway READY handshake
+  (15s timeout) in both manual and auto-connect paths.
+- Setup wizard re-runs the install if the VoiceAttack path changed since the
+  last install step, instead of writing config.json to the stale folder.
+- Setup build ordering: a `ProjectReference` guarantees the plugin builds
+  before payload embedding, plus a fail-fast error on an empty payload.
+- `callbyusername` now matches the raw username only (a shared display name
+  can no longer win over the real username).
+- Wizard invite link drops the unused Move Members permission and adds the
+  documented View Channel + Use Voice Activity permissions.
+
+### Changed
+- Wizard save preserves existing `AutoConnect`/`LogLevel` instead of
+  resetting them, and restores the encrypted token blob if the token box is
+  cleared after a stray keystroke.
+- `build.bat` now also publishes the single-file setup wizard.
+
 ## [1.3.0] - 2026-09-11
 
 ### Added

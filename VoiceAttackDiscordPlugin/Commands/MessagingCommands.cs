@@ -15,8 +15,9 @@ public class MessagingCommands
 
     public async Task SendMessageAsync(string channelName, string message)
     {
-        // Empty channel falls back to the configured default (lets `sendmessage:<message>` work
-        // when the Context only carries the text — see CommandContext parsing).
+        // Empty channel falls back to the configured default: the Context form
+        // is `sendmessage::<message>` (double colon — an empty channel part).
+        // A single-colon `sendmessage:<text>` puts <text> in the channel slot.
         if (string.IsNullOrWhiteSpace(channelName))
             channelName = _botManager.DefaultChannelName;
 

@@ -66,7 +66,16 @@ public class Plugin
                     try
                     {
                         await _botManager.ConnectAsync();
-                        vaProxy.WriteToLog($"{PluginName} connected to Discord automatically.", "green");
+                        try
+                        {
+                            await _botManager.Ready.WaitAsync(TimeSpan.FromSeconds(15));
+                            vaProxy.WriteToLog($"{PluginName} connected to Discord automatically.", "green");
+                        }
+                        catch (TimeoutException)
+                        {
+                            vaProxy.WriteToLog($"{PluginName} connected, but Discord is still " +
+                                "handshaking (READY timed out). Commands may fail for a few seconds.", "yellow");
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -104,6 +113,10 @@ public class Plugin
                 {
                     vaProxy.WriteToLog($"{PluginName} shutdown disconnect: {ex.Message}", "yellow");
                 }
+                try { _botManager.Dispose(); }
+                catch { /* shutting down; never block VoiceAttack */ }
+                _botManager = null;
+                _router = null;
             }
 
             vaProxy.WriteToLog($"{PluginName} shutting down.", "yellow");

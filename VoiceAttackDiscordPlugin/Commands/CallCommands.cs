@@ -111,7 +111,7 @@ public class CallCommands
             return;
         }
 
-        var user = await _botManager.FindUserAsync(userName);
+        var user = await _botManager.FindUserByUsernameAsync(userName);
         if (user == null)
         {
             _va.WriteToLog($"Discord: Warning: no user found for '{userName}'. They may have changed their username — try callbyid:<ID> instead.", "yellow");

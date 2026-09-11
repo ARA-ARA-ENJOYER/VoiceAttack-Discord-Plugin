@@ -2,6 +2,7 @@
 bin/
 obj/
 out/
+publish/
 
 ## .NET user / IDE files
 .vs/

@@ -275,6 +275,23 @@ public class DiscordBotManager : IDisposable
         return null;
     }
 
+    // Username-only match for callbyusername: raw usernames (no @) are unique,
+    // so a shared *display* name must never win over the real username here.
+    public async Task<IUser?> FindUserByUsernameAsync(string userName)
+    {
+        if (_client == null) return null;
+
+        foreach (var guild in TargetGuilds())
+        {
+            var users = await GetGuildUsersCachedAsync(guild);
+            var user = users.FirstOrDefault(u =>
+                string.Equals(u.Username, userName, StringComparison.OrdinalIgnoreCase));
+
+            if (user != null) return user;
+        }
+        return null;
+    }
+
     public async Task<IUser?> FindUserByIdAsync(ulong userId)
     {
         if (_client == null) return null;

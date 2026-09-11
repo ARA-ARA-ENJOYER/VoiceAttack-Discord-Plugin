@@ -90,8 +90,10 @@ variables work inline. Ignore the legacy variable input boxes — they do nothin
 Read them back with `{TXT:...}`, e.g. TTS: `Last messages: {TXT:Discord.LastMessages}`.
 
 💡 `sendmessage`, `readmessages`, `listusers`, and `joinvoice` fall back to
-`DefaultChannelName` from `config.json` when the channel part is empty
-(e.g. Context `sendmessage:` + your dictated text uses the default channel).
+`DefaultChannelName` from `config.json` when the channel part is empty —
+leave it blank with a double colon (e.g. Context `sendmessage::{TXT}` sends
+your dictated text to the default channel). A single-colon form like
+`sendmessage:hello` treats `hello` as the channel name, not the message.
 
 ---
 
@@ -125,9 +127,10 @@ Create these under **Other > Advanced > Execute an External Plugin Function**:
   plugin, a plaintext token in `config.json` is re-saved encrypted (Windows DPAPI,
   tied to your Windows user account). Copying `config.json` to another PC or user
   won't work there — just re-enter the token via the setup wizard.
-- **Give the bot as few permissions as possible.** It only needs *Send Messages,
+- **Give the bot as few permissions as possible.** It only needs *View Channel, Send Messages,
   Read Message History, Connect, Speak, Use Voice Activity* plus the *Server Members*
-  and *Message Content* intents. If the bot is only for your server, don't invite it
+  and *Message Content* intents. (`botmute`/`botdeafen` additionally need *Mute Members*
+  and *Deafen Members* — the wizard's invite link includes exactly this set, nothing more.) If the bot is only for your server, don't invite it
   anywhere else.
 - **If a token ever leaks:** Discord Developer Portal → your app → Bot → **Reset Token**,
   then paste the new one via the setup wizard (or into `config.json` — it re-encrypts

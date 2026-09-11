@@ -95,6 +95,9 @@ public sealed class SetupForm : Form
     private readonly Button _themeToggle = new();
     private enum StatusKind { None, Info, Ok, Err }
     private string? _preservedEncrypted;
+    private string? _preservedEncryptedBackup;
+    private bool _existingAutoConnect = true;
+    private string _existingLogLevel = "Info";
     private string? _clientId;
 
     // Bot tokens are three dot-separated segments; mirrors the plugin's TokenValidator.
@@ -542,10 +545,24 @@ public sealed class SetupForm : Form
         _token.TextChanged += (_, _) =>
         {
             _tokenValid = false;
-            SetStatus("", StatusKind.None, "");
+            if (_token.Text.Trim().Length > 0)
+            {
+                _preservedEncrypted = null;
+                SetStatus("", StatusKind.None, "");
+            }
+            else if (_preservedEncryptedBackup != null)
+            {
+                // Box cleared again: restore the untouched encrypted blob so a
+                // stray keystroke can't strand a working existing token.
+                _preservedEncrypted = _preservedEncryptedBackup;
+                SetStatus("Token already configured & encrypted on this PC.", StatusKind.Ok, "\u2713 ");
+            }
+            else
+            {
+                SetStatus("", StatusKind.None, "");
+            }
             _clientId = null;
             _invite.Enabled = false;
-            if (_token.Text.Trim().Length > 0) _preservedEncrypted = null;
             _save.Enabled = CanSave();
         };
         _stepConfigure.Controls.Add(_token);
@@ -655,7 +672,10 @@ public sealed class SetupForm : Form
             return;
         }
 
-        long permissions = (1L << 11) | (1L << 16) | (1L << 20) | (1L << 21) | (1L << 22) | (1L << 23) | (1L << 24);
+        // Least privilege for what the plugin actually does: view/send/read (10,11,16),
+        // voice connect+speak+VAD (20,21,25), and mute/deafen members (22,23) which
+        // botmute/botdeafen need for their server-side ModifyAsync calls.
+        long permissions = (1L << 10) | (1L << 11) | (1L << 16) | (1L << 20) | (1L << 21) | (1L << 22) | (1L << 23) | (1L << 25);
         var url = $"https://discord.com/oauth2/authorize?client_id={_clientId}&scope=bot&permissions={permissions}";
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
@@ -704,8 +724,8 @@ public sealed class SetupForm : Form
                 ["EncryptedBotToken"] = token.Length == 0 ? _preservedEncrypted : "",
                 ["DefaultGuildId"] = guildId,
                 ["DefaultChannelName"] = channel,
-                ["AutoConnect"] = true,
-                ["LogLevel"] = "Info"
+                ["AutoConnect"] = _existingAutoConnect,
+                ["LogLevel"] = _existingLogLevel
             };
             string json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(Path.Combine(_installDir, "config.json"), json);
@@ -732,6 +752,7 @@ public sealed class SetupForm : Form
             if (root.TryGetProperty("EncryptedBotToken", out var enc) && !string.IsNullOrWhiteSpace(enc.GetString()))
             {
                 _preservedEncrypted = enc.GetString();
+                _preservedEncryptedBackup = _preservedEncrypted;
                 SetStatus("Token already configured & encrypted on this PC.", StatusKind.Ok, "\u2713 ");
                 _save.Enabled = CanSave();
             }
@@ -747,6 +768,12 @@ public sealed class SetupForm : Form
                 _guildId.Text = gid.ToString();
             if (root.TryGetProperty("DefaultChannelName", out var ch) && !string.IsNullOrWhiteSpace(ch.GetString()))
                 _channel.Text = ch.GetString();
+            // A re-run over an existing config must not reset these to defaults.
+            if (root.TryGetProperty("AutoConnect", out var ac) &&
+                (ac.ValueKind == JsonValueKind.True || ac.ValueKind == JsonValueKind.False))
+                _existingAutoConnect = ac.GetBoolean();
+            if (root.TryGetProperty("LogLevel", out var ll) && !string.IsNullOrWhiteSpace(ll.GetString()))
+                _existingLogLevel = ll.GetString()!;
         }
         catch
         {
@@ -827,7 +854,18 @@ public sealed class SetupForm : Form
         _back.Enabled = _back.Visible;
         _next.Text = _step == 4 ? "Close" : "Next >";
 
-        if (_step == 2 && _installLog.TextLength == 0) RunInstall();
+        if (_step == 2)
+        {
+            // Install on first visit — and again if the user went back and changed
+            // the path, otherwise config.json would land in the stale folder.
+            var target = Path.Combine(_vaPath.Text.Trim(), "Apps", PluginFolderName);
+            if (_installLog.TextLength == 0 ||
+                !string.Equals(_installDir, target, StringComparison.OrdinalIgnoreCase))
+            {
+                _installLog.Clear();
+                RunInstall();
+            }
+        }
         if (_step == 4)
             _finishSummary.Text =
                 $"Plugin installed to:\r\n{_installDir}\r\n\r\n" +
@@ -873,6 +911,19 @@ public sealed class SetupForm : Form
         public int Current { get; set; }
         public Theme Theme { get; set; } = Dark;
 
+        // Shared paint resources: StringFormat is not thread-safe for mutation,
+        // but paints happen on the UI thread and these are never mutated.
+        private static readonly StringFormat Centered = new()
+        {
+            Alignment = StringAlignment.Center,
+            LineAlignment = StringAlignment.Center
+        };
+        private static readonly StringFormat LabelFormat = new()
+        {
+            Alignment = StringAlignment.Center,
+            Trimming = StringTrimming.EllipsisCharacter
+        };
+
         public StepIndicator()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
@@ -913,8 +964,7 @@ public sealed class SetupForm : Form
                     g.FillEllipse(fill, rect);
                     using var white = new SolidBrush(Color.White);
                     using var checkFont = new Font("Segoe UI", 9F, FontStyle.Bold);
-                    var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                    g.DrawString("✓", checkFont, white, new RectangleF(cx - r, cy - r - 1, r * 2, r * 2 + 2), sf);
+                    g.DrawString("✓", checkFont, white, new RectangleF(cx - r, cy - r - 1, r * 2, r * 2 + 2), Centered);
                 }
                 else if (current)
                 {
@@ -922,22 +972,19 @@ public sealed class SetupForm : Form
                     g.DrawEllipse(ring, rect);
                     using var numBrush = new SolidBrush(Theme.Accent);
                     using var numFont = new Font("Segoe UI", 8F, FontStyle.Bold);
-                    var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                    g.DrawString((i + 1).ToString(), numFont, numBrush, new RectangleF(cx - r, cy - r, r * 2, r * 2), sf);
+                    g.DrawString((i + 1).ToString(), numFont, numBrush, new RectangleF(cx - r, cy - r, r * 2, r * 2), Centered);
                 }
                 else
                 {
                     using var ring = new Pen(Theme.Border, 2f);
                     g.DrawEllipse(ring, rect);
                     using var numBrush = new SolidBrush(Theme.TextSecondary);
-                    var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                    g.DrawString((i + 1).ToString(), font, numBrush, new RectangleF(cx - r, cy - r, r * 2, r * 2), sf);
+                    g.DrawString((i + 1).ToString(), font, numBrush, new RectangleF(cx - r, cy - r, r * 2, r * 2), Centered);
                 }
 
                 using var labelBrush = new SolidBrush(done || current ? Theme.TextPrimary : Theme.TextSecondary);
-                var lsf = new StringFormat { Alignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter };
                 g.DrawString(StepNames[i], done || current ? fontBold : font, labelBrush,
-                    new RectangleF(slot * i, cy + r + 2, slot, 14), lsf);
+                    new RectangleF(slot * i, cy + r + 2, slot, 14), LabelFormat);
             }
         }
     }
