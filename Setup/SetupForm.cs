@@ -35,9 +35,14 @@ public sealed class SetupForm : Form
     private readonly CheckBox _removeOld = new();
     private readonly TextBox _token = new();
     private readonly TextBox _guildId = new();
+    private readonly TextBox _channel = new();
+    private readonly TextBox _instructions = new();
+    private readonly Button _invite = new();
     private readonly Label _tokenStatus = new();
     private readonly Button _save = new();
     private readonly Label _finishSummary = new();
+    private string? _preservedEncrypted;
+    private string? _clientId;
 
     // Bot tokens are three dot-separated segments; mirrors the plugin's TokenValidator.
     private static readonly Regex TokenPattern = new(@"^[\w-]+\.[\w-]+\.[\w-]+$", RegexOptions.Compiled);
@@ -91,6 +96,8 @@ public sealed class SetupForm : Form
 
         var detected = DetectVoiceAttack();
         if (detected != null) _vaPath.Text = detected;
+
+        LoadExistingConfig();
 
         ShowStep(0);
     }
@@ -238,58 +245,100 @@ public sealed class SetupForm : Form
 
     private void BuildConfigureStep()
     {
+        _stepConfigure.AutoScroll = true;
+        _stepConfigure.AutoScrollMinSize = new Size(508, 450);
+
         var lbl = new Label
         {
-            Text = "Paste your Discord bot token and server (guild) ID.\r\n" +
-                   "No bot yet? Click the button to open Discord's developer portal.",
+            Text = "Set up the Discord side. Do each step once, in order — most of it is " +
+                   "copy-pasting between Discord's site and this box.",
             AutoSize = false
         };
-        lbl.SetBounds(0, 8, 528, 44);
+        lbl.SetBounds(0, 8, 528, 40);
         _stepConfigure.Controls.Add(lbl);
 
+        _instructions.Multiline = true;
+        _instructions.ReadOnly = true;
+        _instructions.ScrollBars = ScrollBars.Vertical;
+        _instructions.WordWrap = true;
+        _instructions.Text =
+            "1. Click \"Open Discord Developer Portal\", then New Application → name it → Create.\r\n" +
+            "2. Go to Bot → Reset Token → Copy. That's the bot token below.\r\n" +
+            "3. Same Bot page → Privileged Gateway Intents → enable Server Members + Message Content → Save Changes.\r\n" +
+            "4. Back here: click Validate token, then \"Invite bot to this server\" and pick your server.\r\n" +
+            "5. In Discord, right-click your server icon → Copy Server ID, and paste it below. " +
+            "(If it's greyed out: Settings → Advanced → turn on Developer Mode.)\r\n" +
+            "6. Default channel is optional — that's where messages land (e.g. general).";
+        _instructions.SetBounds(0, 52, 528, 112);
+        _stepConfigure.Controls.Add(_instructions);
+
         var portal = new Button { Text = "Open Discord Developer Portal" };
-        portal.SetBounds(0, 56, 260, 30);
+        portal.SetBounds(0, 170, 250, 30);
         portal.Click += (_, _) => Process.Start(new ProcessStartInfo("https://discord.com/developers/applications") { UseShellExecute = true });
         _stepConfigure.Controls.Add(portal);
 
+        _invite.Text = "Invite bot to this server";
+        _invite.Enabled = false;
+        _invite.SetBounds(258, 170, 250, 30);
+        _invite.Click += (_, _) => InviteBot();
+        _stepConfigure.Controls.Add(_invite);
+
         var tokenLbl = new Label { Text = "Bot token:", AutoSize = false };
-        tokenLbl.SetBounds(0, 96, 528, 20);
+        tokenLbl.SetBounds(0, 208, 528, 20);
         _stepConfigure.Controls.Add(tokenLbl);
 
         _token.UseSystemPasswordChar = true;
-        _token.SetBounds(0, 118, 528, 28);
+        _token.SetBounds(0, 230, 528, 28);
         _token.TextChanged += (_, _) =>
         {
-            // Any edit invalidates the previous validation — the token on screen
-            // is no longer the one Discord approved.
             _tokenValid = false;
-            _save.Enabled = false;
             _tokenStatus.Text = "";
+            _clientId = null;
+            _invite.Enabled = false;
+            if (_token.Text.Trim().Length > 0) _preservedEncrypted = null;
+            _save.Enabled = CanSave();
         };
         _stepConfigure.Controls.Add(_token);
 
-        var guildLbl = new Label { Text = "Server (guild) ID:", AutoSize = false };
-        guildLbl.SetBounds(0, 154, 528, 20);
-        _stepConfigure.Controls.Add(guildLbl);
-
-        _guildId.SetBounds(0, 176, 528, 28);
-        _stepConfigure.Controls.Add(_guildId);
-
         var validate = new Button { Text = "Validate token" };
-        validate.SetBounds(0, 212, 140, 30);
+        validate.SetBounds(0, 266, 140, 30);
         validate.Click += async (_, _) => await ValidateTokenAsync();
         _stepConfigure.Controls.Add(validate);
 
         _tokenStatus.AutoSize = false;
-        _tokenStatus.SetBounds(150, 212, 378, 30);
+        _tokenStatus.SetBounds(150, 266, 378, 30);
         _stepConfigure.Controls.Add(_tokenStatus);
+
+        var guildLbl = new Label { Text = "Server (guild) ID:", AutoSize = false };
+        guildLbl.SetBounds(0, 304, 250, 20);
+        _stepConfigure.Controls.Add(guildLbl);
+
+        _guildId.SetBounds(0, 326, 250, 28);
+        _stepConfigure.Controls.Add(_guildId);
+
+        var channelLbl = new Label { Text = "Default channel (optional):", AutoSize = false };
+        channelLbl.SetBounds(262, 304, 266, 20);
+        _stepConfigure.Controls.Add(channelLbl);
+
+        _channel.Text = "general";
+        _channel.SetBounds(262, 326, 266, 28);
+        _stepConfigure.Controls.Add(_channel);
 
         var save = _save;
         save.Text = "Save config.json";
         save.Enabled = false;
-        save.SetBounds(0, 250, 140, 30);
+        save.SetBounds(0, 362, 140, 30);
         save.Click += (_, _) => SaveConfig();
         _stepConfigure.Controls.Add(save);
+
+        var note = new Label
+        {
+            Text = "config.json stays only on this PC — the plugin encrypts your token on first run.",
+            ForeColor = Color.Gray,
+            AutoSize = false
+        };
+        note.SetBounds(150, 362, 378, 30);
+        _stepConfigure.Controls.Add(note);
     }
 
     private async Task ValidateTokenAsync()
@@ -326,6 +375,8 @@ public sealed class SetupForm : Form
             var json = await res.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
             var name = doc.RootElement.TryGetProperty("username", out var u) ? u.GetString() : "?";
+            _clientId = doc.RootElement.TryGetProperty("id", out var idProp) ? idProp.GetString() : null;
+            _invite.Enabled = !string.IsNullOrEmpty(_clientId);
             SetStatus($"✓ Token valid — bot is \"{name}\".", Color.Green);
             _tokenValid = true;
             _save.Enabled = true;
@@ -344,32 +395,64 @@ public sealed class SetupForm : Form
         _tokenStatus.ForeColor = color;
     }
 
+    private void InviteBot()
+    {
+        if (string.IsNullOrEmpty(_clientId))
+        {
+            MessageBox.Show("Validate your bot token first, then invite the bot.", "Setup",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        long permissions = (1L << 11) | (1L << 16) | (1L << 20) | (1L << 21) | (1L << 22) | (1L << 23) | (1L << 24);
+        var url = $"https://discord.com/oauth2/authorize?client_id={_clientId}&scope=bot&permissions={permissions}";
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    private bool CanSave()
+    {
+        var token = _token.Text.Trim();
+        if (token.Length == 0) return _preservedEncrypted != null;
+        return _tokenValid && TokenPattern.IsMatch(token);
+    }
+
     private void SaveConfig()
     {
-        if (!_tokenValid || !TokenPattern.IsMatch(_token.Text.Trim()))
+        var token = _token.Text.Trim();
+        if (token.Length > 0 && (!_tokenValid || !TokenPattern.IsMatch(token)))
         {
             MessageBox.Show("Click \"Validate token\" first — only a token Discord approved can be saved.", "Setup",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        if (token.Length == 0 && _preservedEncrypted == null)
+        {
+            MessageBox.Show("Paste your bot token first (step 2).", "Setup",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
         if (!ulong.TryParse(_guildId.Text.Trim(), out var guildId))
         {
-            MessageBox.Show("Enter a numeric server ID first.", "Setup",
+            MessageBox.Show("Enter a numeric server ID first (step 5).", "Setup",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
+        var channel = _channel.Text.Trim();
+        if (channel.Length == 0) channel = "general";
+
         try
         {
             // Serialized (never string-concatenated) so any token text stays valid JSON.
-            // The plugin encrypts BotToken in place on first load (DPAPI, this Windows user).
+            // A fresh token stays plaintext; the plugin encrypts it on first load
+            // (DPAPI, this Windows user). An untouched existing token keeps its blob.
             var payload = new Dictionary<string, object?>
             {
-                ["BotToken"] = _token.Text.Trim(),
-                ["EncryptedBotToken"] = "",
+                ["BotToken"] = token,
+                ["EncryptedBotToken"] = token.Length == 0 ? _preservedEncrypted : "",
                 ["DefaultGuildId"] = guildId,
-                ["DefaultChannelName"] = "general",
+                ["DefaultChannelName"] = channel,
                 ["AutoConnect"] = true,
                 ["LogLevel"] = "Info"
             };
@@ -382,6 +465,41 @@ public sealed class SetupForm : Form
         {
             MessageBox.Show($"Could not save config.json:\n{ex.Message}", "Setup",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void LoadExistingConfig()
+    {
+        string configPath = Path.Combine(_vaPath.Text.Trim(), "Apps", PluginFolderName, "config.json");
+        if (!File.Exists(configPath)) return;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(configPath));
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("EncryptedBotToken", out var enc) && !string.IsNullOrWhiteSpace(enc.GetString()))
+            {
+                _preservedEncrypted = enc.GetString();
+                SetStatus("Token already configured & encrypted on this PC.", Color.Green);
+                _save.Enabled = CanSave();
+            }
+            else if (root.TryGetProperty("BotToken", out var bot) && !string.IsNullOrWhiteSpace(bot.GetString()))
+            {
+                _token.Text = bot.GetString();
+                _tokenValid = true;
+                SetStatus("Loaded your saved token. Save to keep using it.", Color.Green);
+                _save.Enabled = CanSave();
+            }
+
+            if (root.TryGetProperty("DefaultGuildId", out var g) && g.TryGetInt64(out var gid) && gid > 0)
+                _guildId.Text = gid.ToString();
+            if (root.TryGetProperty("DefaultChannelName", out var ch) && !string.IsNullOrWhiteSpace(ch.GetString()))
+                _channel.Text = ch.GetString();
+        }
+        catch
+        {
+            // Not fatal — the wizard simply starts blank.
         }
     }
 

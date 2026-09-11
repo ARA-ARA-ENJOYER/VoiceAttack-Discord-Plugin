@@ -62,11 +62,14 @@ variables work inline. Ignore the legacy variable input boxes — they do nothin
 | `listusers:<channel>` | List users in a channel |
 | `joinvoice:<channel>` | Join a voice channel |
 | `leavevoice` | Leave current voice channel |
-| `mute` | Toggle self-mute |
-| `deafen` | Toggle self-deafen |
+| `mute` | Toggle YOUR microphone mute (`Ctrl+Shift+M`, Windows) |
+| `deafen` | Toggle YOUR deafen (`Ctrl+Shift+D`, Windows) |
+| `botmute` | Toggle the bot's server-side mute |
+| `botdeafen` | Toggle the bot's server-side deafen |
 | `calluser:<name>` | Open Discord DM and initiate call (legacy flow) |
-| `callbyid:<user ID>` | Look up user by ID, open DM via quick switcher, call with Ctrl+' |
-| `callbyusername:<name>` | Same new-style call flow, matched by name |
+| `callbyid:<user ID>` | Look up user by ID, open DM via `@username` in quick switcher, call with Ctrl+' |
+| `callbyusername:<name>` | Same new-style call flow, matched by raw username (no `@`) |
+| `callbyname:<name>` | Same new-style call flow, matched by display name |
 
 ### 📥 VoiceAttack Variables Set
 
@@ -105,7 +108,8 @@ Create these under **Other > Advanced > Execute an External Plugin Function**:
 ## ⚠️ Limitations
 
 - **Calls**: keyboard automation (`Ctrl+K` → DM → `Ctrl+'`). Requires the Discord desktop app open. May break if Discord updates its UI.
-- **Duplicate display names**: detected automatically — the plugin warns and navigates by unique `@username` instead. Prefer `callbyid` over `calluser` when you have the ID.
+- **Duplicate display names**: detected automatically for `callbyname` — the plugin warns and navigates by unique `@username` instead. Prefer `callbyid` over the name-based calls when you have the ID.
+- **Changed names**: if `callbyusername`/`callbyname` can't find someone, they warn you they may have renamed — use `callbyid:<ID>` (IDs never change).
 - **Voice channels**: bot needs Connect and Speak permissions.
 - **Rate limits**: Discord API throttles abuse; the plugin retries but go easy.
 - **Windows only**: call automation works on Windows.

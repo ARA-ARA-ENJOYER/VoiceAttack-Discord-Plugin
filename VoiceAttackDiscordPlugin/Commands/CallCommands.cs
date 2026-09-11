@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace VoiceAttackDiscordPlugin.Commands;
@@ -75,18 +74,11 @@ public class CallCommands
             return;
         }
 
-        // ID lookup is name-change proof; resolve the current display name for keyboard navigation
+        // ID lookup is name-change proof; IDs are unique while display names are not —
+        // @username is an exact Quick Switcher hit
         string displayName = user.GlobalName ?? user.Username;
         _va.WriteToLog($"Discord: Initiating call to '{displayName}' (ID: {user.Id}) via keyboard automation...", "blue");
-
-        // Usernames are unique; display names are not. If the display name is shared,
-        // navigate by @username instead so the Quick Switcher lands on the right DM.
-        int nameMatches = await _botManager.CountDistinctUsersByDisplayNameAsync(displayName);
-        string searchText = CallSearchText.Select(displayName, nameMatches, user.Username);
-        if (nameMatches > 1)
-        {
-            _va.WriteToLog($"Discord: Warning: {nameMatches} users share the display name '{displayName}'. Navigating by unique username '@{user.Username}' instead.", "yellow");
-        }
+        string searchText = "@" + user.Username;
 
         try
         {
@@ -122,11 +114,11 @@ public class CallCommands
         var user = await _botManager.FindUserAsync(userName);
         if (user == null)
         {
-            _va.WriteToLog($"Discord: User '{userName}' not found for call.", "red");
+            _va.WriteToLog($"Discord: Warning: no user found for '{userName}'. They may have changed their username — try callbyid:<ID> instead.", "yellow");
             return;
         }
 
-        // Usernames are unique, so navigate by @username for an exact Quick Switcher hit
+        // Usernames are unique, so navigate by raw username for an exact Quick Switcher hit
         string displayName = user.GlobalName ?? user.Username;
         _va.WriteToLog($"Discord: Initiating call to '{displayName}' via keyboard automation...", "blue");
 
@@ -134,7 +126,57 @@ public class CallCommands
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                await InitiateCallByIdWindows("@" + user.Username, displayName);
+                await InitiateCallByIdWindows(user.Username, displayName);
+            }
+            else
+            {
+                _va.WriteToLog("Discord: Call automation only supported on Windows.", "red");
+            }
+        }
+        catch (Exception ex)
+        {
+            _va.WriteToLog($"Discord: Call initiation failed: {ex.Message}", "red");
+        }
+    }
+
+    public async Task CallByNameAsync(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _va.WriteToLog("Discord: No name provided for callbyname.", "yellow");
+            return;
+        }
+
+        if (!_botManager.IsConnected)
+        {
+            _va.WriteToLog("Discord: Not connected. Use 'connect' context first.", "red");
+            return;
+        }
+
+        var user = await _botManager.FindUserAsync(name);
+        if (user == null)
+        {
+            _va.WriteToLog($"Discord: Warning: no user found for '{name}'. They may have changed their display name — try callbyid:<ID> instead.", "yellow");
+            return;
+        }
+
+        // Usernames are unique; display names are not. If the display name is shared,
+        // navigate by @username instead so the Quick Switcher lands on the right DM.
+        string displayName = user.GlobalName ?? user.Username;
+        _va.WriteToLog($"Discord: Initiating call to '{displayName}' via keyboard automation...", "blue");
+
+        int nameMatches = await _botManager.CountDistinctUsersByDisplayNameAsync(displayName);
+        string searchText = CallSearchText.Select(displayName, nameMatches, user.Username);
+        if (nameMatches > 1)
+        {
+            _va.WriteToLog($"Discord: Warning: {nameMatches} users share the display name '{displayName}'. Navigating by unique username '@{user.Username}' instead.", "yellow");
+        }
+
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                await InitiateCallByIdWindows(searchText, displayName);
             }
             else
             {
@@ -149,24 +191,24 @@ public class CallCommands
 
     private async Task InitiateCallWindows(string username)
     {
-        var discordHwnd = FindDiscordWindow();
+        var discordHwnd = KeyboardAutomation.FindDiscordWindow(_va);
         if (discordHwnd == IntPtr.Zero) return;
 
         try
         {
-            SetForegroundWindow(discordHwnd);
+            KeyboardAutomation.SetForegroundWindow(discordHwnd);
             await Task.Delay(500);
 
-            PressCombo(VK_CONTROL, VkFor('u'));
+            KeyboardAutomation.PressCombo(KeyboardAutomation.VK_CONTROL, KeyboardAutomation.VkFor('u'));
             await Task.Delay(300);
 
-            await TypeTextAsync(username);
+            await KeyboardAutomation.TypeTextAsync(username);
             await Task.Delay(800);
 
-            PressKey(VK_RETURN);
+            KeyboardAutomation.PressKey(KeyboardAutomation.VK_RETURN);
             await Task.Delay(500);
 
-            PressCombo(VK_CONTROL, VK_SHIFT, VkFor('c'));
+            KeyboardAutomation.PressCombo(KeyboardAutomation.VK_CONTROL, KeyboardAutomation.VK_SHIFT, KeyboardAutomation.VkFor('c'));
             await Task.Delay(300);
 
             _va.WriteToLog($"Discord: Call to '{username}' initiated via keyboard shortcuts.", "green");
@@ -181,26 +223,24 @@ public class CallCommands
 
     private async Task InitiateCallByIdWindows(string searchText, string displayName)
     {
-        var discordHwnd = FindDiscordWindow();
+        var discordHwnd = KeyboardAutomation.FindDiscordWindow(_va);
         if (discordHwnd == IntPtr.Zero) return;
 
         try
         {
-            SetForegroundWindow(discordHwnd);
+            KeyboardAutomation.SetForegroundWindow(discordHwnd);
             await Task.Delay(500);
 
-            // Quick switcher -> jump straight to the user's DM
-            PressCombo(VK_CONTROL, VkFor('k'));
+            KeyboardAutomation.PressCombo(KeyboardAutomation.VK_CONTROL, KeyboardAutomation.VkFor('k'));
             await Task.Delay(400);
 
-            await TypeTextAsync(searchText);
+            await KeyboardAutomation.TypeTextAsync(searchText);
             await Task.Delay(800);
 
-            PressKey(VK_RETURN);
+            KeyboardAutomation.PressKey(KeyboardAutomation.VK_RETURN);
             await Task.Delay(1000);
 
-            // Start the voice call in the open DM
-            PressCombo(VK_CONTROL, VkFor('\''));
+            KeyboardAutomation.PressCombo(KeyboardAutomation.VK_CONTROL, KeyboardAutomation.VkFor('\''));
             await Task.Delay(300);
 
             _va.WriteToLog($"Discord: Call to '{displayName}' initiated via keyboard shortcuts.", "green");
@@ -210,105 +250,6 @@ public class CallCommands
         catch (Exception ex)
         {
             _va.WriteToLog($"Discord: Keyboard automation error: {ex.Message}", "red");
-        }
-    }
-
-    private IntPtr FindDiscordWindow()
-    {
-        var discordProcess = Process.GetProcessesByName("Discord").FirstOrDefault();
-        if (discordProcess == null)
-        {
-            _va.WriteToLog("Discord: Discord desktop app not found. Please open Discord first.", "red");
-            return IntPtr.Zero;
-        }
-
-        // A local process can be named anything: only automate a window whose
-        // executable really lives in a Discord install folder. If the path can't
-        // be read (permissions), fall through to the visible-window check below.
-        if (!LooksLikeDiscordInstall(discordProcess))
-        {
-            _va.WriteToLog("Discord: Found a process named Discord outside a Discord install folder — refusing to automate it.", "red");
-            return IntPtr.Zero;
-        }
-
-        if (discordProcess.MainWindowHandle == IntPtr.Zero)
-        {
-            _va.WriteToLog("Discord: Discord window not visible. Please open Discord first.", "red");
-            return IntPtr.Zero;
-        }
-
-        return discordProcess.MainWindowHandle;
-    }
-
-    private static bool LooksLikeDiscordInstall(Process process)
-    {
-        try
-        {
-            string? path = process.MainModule?.FileName;
-            if (string.IsNullOrEmpty(path)) return true;
-            string? dir = Path.GetDirectoryName(path);
-            return string.Equals(Path.GetFileName(path), "Discord.exe", StringComparison.OrdinalIgnoreCase)
-                && dir != null && dir.Contains("Discord", StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return true;
-        }
-    }
-
-    // --- Low-level keyboard helpers (user32 keybd_event; the old SendKeys import does not exist) ---
-
-    private const byte VK_CONTROL = 0x11;
-    private const byte VK_SHIFT = 0x10;
-    private const byte VK_RETURN = 0x0D;
-    private const uint KEYEVENTF_KEYUP = 0x0002;
-
-    [DllImport("user32.dll")]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
-
-    [DllImport("user32.dll")]
-    private static extern short VkKeyScan(char ch);
-
-    private static byte VkFor(char ch)
-    {
-        // Layout-aware virtual-key code for a character (low byte of VkKeyScan result)
-        return (byte)(VkKeyScan(ch) & 0xFF);
-    }
-
-    private static void KeyDown(byte vk) => keybd_event(vk, 0, 0, UIntPtr.Zero);
-
-    private static void KeyUp(byte vk) => keybd_event(vk, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-
-    private static void PressKey(byte vk)
-    {
-        KeyDown(vk);
-        KeyUp(vk);
-    }
-
-    private static void PressCombo(params byte[] vks)
-    {
-        foreach (byte vk in vks) KeyDown(vk);
-        for (int i = vks.Length - 1; i >= 0; i--) KeyUp(vks[i]);
-    }
-
-    private static async Task TypeTextAsync(string text)
-    {
-        foreach (char ch in text)
-        {
-            short scan = VkKeyScan(ch);
-            if (scan == -1) continue; // no key mapping on this layout; skip
-
-            byte vk = (byte)(scan & 0xFF);
-            bool shift = (scan & 0x100) != 0;
-
-            if (shift) KeyDown(VK_SHIFT);
-            PressKey(vk);
-            if (shift) KeyUp(VK_SHIFT);
-
-            await Task.Delay(15);
         }
     }
 }

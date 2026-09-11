@@ -1,5 +1,7 @@
 namespace VoiceAttackDiscordPlugin.Commands;
 
+using System.Runtime.InteropServices;
+
 public class VoiceCommands
 {
     private readonly DiscordBotManager _botManager;
@@ -47,7 +49,47 @@ public class VoiceCommands
         _va.SetText("Discord.VoiceChannel", "");
     }
 
-    public async Task ToggleMuteAsync()
+    public async Task ToggleUserMuteAsync()
+    {
+        await ToggleUserKeyAsync('m', "mute");
+    }
+
+    public async Task ToggleUserDeafenAsync()
+    {
+        await ToggleUserKeyAsync('d', "deafen");
+    }
+
+    private async Task ToggleUserKeyAsync(char key, string label)
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            _va.WriteToLog($"Discord: {label} automation only supported on Windows.", "red");
+            return;
+        }
+
+        var discordHwnd = KeyboardAutomation.FindDiscordWindow(_va);
+        if (discordHwnd == IntPtr.Zero) return;
+
+        try
+        {
+            KeyboardAutomation.SetForegroundWindow(discordHwnd);
+            await Task.Delay(500);
+
+            KeyboardAutomation.PressCombo(
+                KeyboardAutomation.VK_CONTROL,
+                KeyboardAutomation.VK_SHIFT,
+                KeyboardAutomation.VkFor(key));
+            await Task.Delay(300);
+
+            _va.WriteToLog($"Discord: {label} toggled for you (Ctrl+Shift+{char.ToUpperInvariant(key)}).", "green");
+        }
+        catch (Exception ex)
+        {
+            _va.WriteToLog($"Discord: Keyboard automation error: {ex.Message}", "red");
+        }
+    }
+
+    public async Task ToggleBotMuteAsync()
     {
         if (!_botManager.IsConnected)
         {
@@ -58,7 +100,7 @@ public class VoiceCommands
         await _botManager.ToggleMuteAsync();
     }
 
-    public async Task ToggleDeafenAsync()
+    public async Task ToggleBotDeafenAsync()
     {
         if (!_botManager.IsConnected)
         {

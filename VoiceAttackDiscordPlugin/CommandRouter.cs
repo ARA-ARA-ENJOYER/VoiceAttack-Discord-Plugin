@@ -81,10 +81,16 @@ public class CommandRouter
                 await _voice.LeaveVoiceAsync();
                 break;
             case "mute":
-                await _voice.ToggleMuteAsync();
+                await _voice.ToggleUserMuteAsync();
                 break;
             case "deafen":
-                await _voice.ToggleDeafenAsync();
+                await _voice.ToggleUserDeafenAsync();
+                break;
+            case "botmute":
+                await _voice.ToggleBotMuteAsync();
+                break;
+            case "botdeafen":
+                await _voice.ToggleBotDeafenAsync();
                 break;
             case "calluser":
                 await _call.CallUserAsync(text1);
@@ -94,6 +100,9 @@ public class CommandRouter
                 break;
             case "callbyusername":
                 await _call.CallByUsernameAsync(text1);
+                break;
+            case "callbyname":
+                await _call.CallByNameAsync(text1);
                 break;
             default:
                 _va.WriteToLog($"VoiceAttackDiscordPlugin: Unknown context '{context}'.", "yellow");
