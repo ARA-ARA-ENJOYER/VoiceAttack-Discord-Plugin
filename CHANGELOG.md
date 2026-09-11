@@ -7,6 +7,15 @@ extracts the matching `## [x.y.z]` block into the GitHub release notes automatic
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-09-11
+
+### Changed
+- README, SETUP.md, and generated release notes now reassure users about the
+  SmartScreen "Windows protected your PC" prompt (More info → Run anyway,
+  plus SHA256 verification).
+- Replaced the real Discord user ID in docs examples and tests with the
+  placeholder `123456789012345678`.
+
 ## [1.3.1] - 2026-09-11
 
 ### Fixed
