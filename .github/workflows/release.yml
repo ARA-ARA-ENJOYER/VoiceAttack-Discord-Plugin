@@ -73,6 +73,7 @@ jobs:
             $existing.TrimEnd(),
             "",
             "One-click install: download VoiceAttack-Discord-Plugin-Setup.exe, double-click it, and follow the wizard.",
+            "If Windows shows 'Windows protected your PC', that's normal for unsigned open-source apps: click 'More info' then 'Run anyway'.",
             "",
             "Verify a download (PowerShell): Get-FileHash <file> -Algorithm SHA256, then compare with SHA256SUMS.txt.",
             "",

@@ -14,6 +14,10 @@
 > from the [Releases page](https://github.com/ARA-ARA-ENJOYER/VoiceAttack-Discord-Plugin/releases),
 > double-click it, and follow the wizard — no building, no manual file copying. 🪄
 >
+> If Windows shows *"Windows protected your PC"*, that's normal for unsigned
+> open-source apps: click **More info → Run anyway**. Cautious? Compare the
+> checksum with **`SHA256SUMS.txt`** on the release page before running it.
+>
 > **What changed?** See **[CHANGELOG.md](CHANGELOG.md)** for every release —
 > features, fixes, and breaking changes. 📝
 

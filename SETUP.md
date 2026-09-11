@@ -8,6 +8,9 @@
 > double-click it, and follow the wizard. It finds VoiceAttack, installs the files,
 > validates your bot token, and writes `config.json` for you. The manual steps below
 > are for advanced users.
+>
+> If Windows shows *"Windows protected your PC"*, that's normal for unsigned
+> open-source apps: click **More info → Run anyway**.
 
 ---
 
