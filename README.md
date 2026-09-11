@@ -13,6 +13,9 @@
 > **Non-technical? Start here:** download **`VoiceAttack-Discord-Plugin-Setup.exe`**
 > from the [Releases page](https://github.com/ARA-ARA-ENJOYER/VoiceAttack-Discord-Plugin/releases),
 > double-click it, and follow the wizard — no building, no manual file copying. 🪄
+>
+> **What changed?** See **[CHANGELOG.md](CHANGELOG.md)** for every release —
+> features, fixes, and breaking changes. 📝
 
 ---
 

@@ -1,0 +1,88 @@
+# Changelog
+
+All notable changes to the VoiceAttack Discord Plugin are documented here.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+When cutting a release, add a new section at the top — the CI release workflow
+extracts the matching `## [x.y.z]` block into the GitHub release notes automatically.
+
+## [Unreleased]
+
+## [1.3.0] - 2026-09-11
+
+### Added
+- Setup wizard Discord dark mode by default, with a Light/Dark toggle in the
+  header (all steps, step indicator, and validation colors re-theme live).
+- `CHANGELOG.md` (Keep a Changelog format); the CI release workflow now injects
+  the matching version section into every GitHub release under "What's new".
+
+### Changed
+- Setup wizard visual refresh: Discord blurple primary buttons, painted 5-node
+  step indicator, header accent rule, footer button band, AA-safe status colors
+  with text prefixes, per-step keyboard focus, Enter-to-advance.
+- Back button is hidden on the first and last wizard steps (it did nothing there).
+- Per-monitor DPI awareness so wizard text stays crisp on scaled displays.
+- README links to the changelog.
+
+## [1.2.1] - 2026-09-11
+
+### Changed
+- Documentation sync: README and SETUP now describe the user/bot mute split
+  (`mute`/`deafen` vs `botmute`/`botdeafen`), the call-navigation actions
+  (`callbyid`, `callbyusername`, `callbyname`), and rename troubleshooting.
+
+## [1.2.0] - 2026-09-11
+
+### Added
+- User mute/deafen toggles (`mute`, `deafen`) via `Ctrl+Shift+M` / `Ctrl+Shift+D`
+  keyboard automation (Windows).
+- Server-side bot mute/deafen (`botmute`, `botdeafen`).
+- `callbyid:<user ID>` — look up a user by ID, open the DM via `@username` in the
+  quick switcher, start the call.
+- `callbyusername:<name>` — same call flow, matched by raw username (no `@`).
+- `callbyname:<name>` — same call flow, matched by display name, with `@username`
+  fallback when the display name is duplicated.
+- Shared `KeyboardAutomation` Win32 keyboard helper class.
+- Setup wizard guided Configure step: step-by-step instructions, "Open Discord
+  Developer Portal" and "Invite bot to this server" buttons, default channel field,
+  and `LoadExistingConfig` prefill on relaunch.
+
+### Changed
+- `callbyusername` and `callbyname` warn when a user may have renamed and advise
+  `callbyid` (IDs never change).
+
+### Fixed
+- `searchuserid` no longer depends on exact-match search; works even when the
+  name-based search path fluctuates.
+
+## [1.1.0] - 2026-09-10
+
+### Added
+- DPAPI-encrypted bot token storage (token re-saved encrypted on first load,
+  tied to the Windows user account).
+- Five-step GUI setup wizard (single-file, self-contained, embedded payload,
+  token validation against the Discord API).
+- `AutoConnect` option and `config.example.json` template.
+- `build.bat` for manual builds.
+- Test suite (41 tests) covering token validation, config handling, and commands.
+- GitHub Actions auto-release on tags with `SHA256SUMS.txt` checksums.
+
+### Changed
+- Unified naming: assembly/folder `VA.VoiceAttackDiscordPlugin`, namespace
+  `VoiceAttackDiscordPlugin`, log prefix, and display name.
+
+### Fixed
+- Init crash when resolving the config path (init proxy has no `PluginDir`).
+- Discord.Net 3.15 API usage (`Mute`/`Deaf` props, cached channel users).
+- Legacy `config.json` is no longer tracked in git (holds local-only bot secrets).
+
+## [1.0.0] - 2026-09-10
+
+### Added
+- Initial release: Discord connect/disconnect, sending messages and DMs, reading
+  recent channel messages into variables, joining/leaving voice channels, user
+  search by name and by ID, listing channel members, and DM call initiation via
+  keyboard automation.
+- V4 plugin interface: all actions through the single `Context` field as
+  `action:arg1:arg2`.
+- Collision-safe calls: duplicate display names warn and fall back to `@username`.
+- README and SETUP guides with voice-command examples.
