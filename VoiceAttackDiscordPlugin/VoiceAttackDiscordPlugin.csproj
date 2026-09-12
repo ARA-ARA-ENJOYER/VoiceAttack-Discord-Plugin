@@ -7,9 +7,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <Version>1.4.0</Version>
+    <Version>1.4.1</Version>
     <!-- Deterministic restores: packages.lock.json is committed, CI restores in locked mode -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- IL3000 flags Assembly.Location under single-file publish analysis, but
+         the plugin is a library VoiceAttack loads from disk — never bundled
+         single-file — so Location is correct here. -->
+    <NoWarn>$(NoWarn);IL3000</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

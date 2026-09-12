@@ -11,7 +11,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Allows building this Windows-only wizard on non-Windows machines (CI publishes on Windows) -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Version>1.4.0</Version>
+    <Version>1.4.1</Version>
     <!-- Deterministic restores: packages.lock.json is committed, CI restores in locked mode -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <Description>Guided installer for the VoiceAttack Discord Plugin</Description>
@@ -48,9 +48,9 @@
          (One call with Targets="Build;GetTargetPath" merges both outputs and
          embeds the marker twice → CS1508.) -->
     <MSBuild Projects="@(ProjectReference)" Targets="Build" SkipNonexistentTargets="true"
-             RemoveProperties="RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+             RemoveProperties="RuntimeIdentifier;RuntimeIdentifiers;SelfContained;PublishSingleFile;IncludeNativeLibrariesForSelfExtract;EnableCompressionInSingleFile" />
     <MSBuild Projects="@(ProjectReference)" Targets="GetTargetPath" SkipNonexistentTargets="true"
-             RemoveProperties="RuntimeIdentifier;RuntimeIdentifiers;SelfContained">
+             RemoveProperties="RuntimeIdentifier;RuntimeIdentifiers;SelfContained;PublishSingleFile;IncludeNativeLibrariesForSelfExtract;EnableCompressionInSingleFile">
       <Output TaskParameter="TargetOutputs" ItemName="_PluginMainDll" />
     </MSBuild>
     <ItemGroup>

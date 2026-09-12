@@ -18,9 +18,10 @@ public sealed class SetupForm : Form
     private const string MainPluginResourceName = "Payload.MainPlugin.dll";
     private const string PayloadPrefix = "Payload.";
 
-    // Folders the plugin used to live in (pre-1.4 renames). Install migrates
-    // their config.json into the new folder and can remove them.
-    private static readonly string[] OldFolderNames = { "VA.DiscordVAPlugin", "VA.VoiceAttackDiscordPlugin" };
+    // Folders the plugin used to live in (pre-1.4 renames), newest first so a
+    // veteran with two legacy folders migrates the CURRENT token, not a stale one.
+    // Install migrates their config.json into the new folder and can remove them.
+    private static readonly string[] OldFolderNames = { "VA.VoiceAttackDiscordPlugin", "VA.DiscordVAPlugin" };
 
     // Install folder name, derived once from the plugin's own assembly name —
     // never hardcoded. Rename AssemblyName and the wizard follows.
@@ -464,6 +465,17 @@ public sealed class SetupForm : Form
                 }
                 finally { try { File.Delete(tmp); } catch { } }
             }
+            // Marker missing (broken payload): derive from the deps.json
+            // resource name instead of falling back to a hardcoded guess below.
+            foreach (var res in asm.GetManifestResourceNames())
+            {
+                if (!res.StartsWith(PayloadPrefix, StringComparison.Ordinal) ||
+                    !res.EndsWith(".deps.json", StringComparison.Ordinal))
+                    continue;
+                var folder = res.Substring(PayloadPrefix.Length,
+                    res.Length - PayloadPrefix.Length - ".deps.json".Length);
+                if (!string.IsNullOrWhiteSpace(folder)) return folder;
+            }
         }
         catch { /* corrupt payload — RunInstall reports the real error below */ }
         return "VoiceAttackDiscordPlugin";
@@ -479,6 +491,9 @@ public sealed class SetupForm : Form
 
             int count = 0;
             var asm = Assembly.GetExecutingAssembly();
+            if (asm.GetManifestResourceStream(MainPluginResourceName) == null)
+                _installLog.AppendText("WARNING: embedded main-plugin marker is missing; " +
+                    "install folder was derived from a fallback name.\r\n");
             foreach (var name in asm.GetManifestResourceNames())
             {
                 if (!name.StartsWith(PayloadPrefix, StringComparison.Ordinal)) continue;
@@ -501,7 +516,10 @@ public sealed class SetupForm : Form
                 return;
             }
 
-            // Migrate config from any legacy folder + clean them up
+            // Migrate config from any legacy folder + clean them up, newest
+            // first so a veteran with two legacy folders keeps the current token.
+            // Each folder is handled on its own: a locked folder (VoiceAttack
+            // running) must not abort the rest of the install.
             var newConfig = Path.Combine(_installDir, "config.json");
             foreach (var oldName in OldFolderNames)
             {
@@ -510,13 +528,23 @@ public sealed class SetupForm : Form
                 var oldConfig = Path.Combine(oldDir, "config.json");
                 if (File.Exists(oldConfig) && !File.Exists(newConfig))
                 {
+                    // Failure here stays fatal (outer catch): without a config
+                    // the install is useless, so abort loudly.
                     File.Copy(oldConfig, newConfig);
                     _installLog.AppendText($"Copied your existing config.json from {oldName} (token preserved).\r\n");
                 }
                 if (_removeOld.Checked)
                 {
-                    Directory.Delete(oldDir, recursive: true);
-                    _installLog.AppendText($"Removed old folder {oldName}.\r\n");
+                    try
+                    {
+                        Directory.Delete(oldDir, recursive: true);
+                        _installLog.AppendText($"Removed old folder {oldName}.\r\n");
+                    }
+                    catch (Exception ex)
+                    {
+                        _installLog.AppendText($"Could not remove {oldName} ({ex.Message}). " +
+                            "Close VoiceAttack and delete it manually to avoid loading the plugin twice.\r\n");
+                    }
                 }
             }
 

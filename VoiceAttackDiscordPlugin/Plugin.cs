@@ -12,6 +12,16 @@ public class Plugin
     private static string PluginVersion =>
         Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "?";
 
+    // User-facing version without the git-SHA suffix baked into InformationalVersion.
+    private static string DisplayVersion =>
+        GitHubReleaseChecker.LatestVersionFromTag(PluginVersion) ?? PluginVersion;
+
+    private static CancellationTokenSource? _updateCts;
+
+    // Folders the plugin used to live in (pre-1.4 renames). If one sits next
+    // to the current folder after an upgrade, VoiceAttack loads the plugin twice.
+    private static readonly string[] LegacyFolderNames = { "VA.VoiceAttackDiscordPlugin", "VA.DiscordVAPlugin" };
+
     private static dynamic? _va;
     private static DiscordBotManager? _botManager;
     private static CommandRouter? _router;
@@ -36,7 +46,7 @@ public class Plugin
 
     public static string VA_DisplayInfo()
     {
-        return $"{PluginName} v{PluginVersion}\r\n" +
+        return $"{PluginName} v{DisplayVersion}\r\n" +
                $"Discord integration for VoiceAttack\r\n" +
                $"Features: messaging, voice channels, user search, call initiation\r\n" +
                $"Requires a Discord Bot token configured in config.json";
@@ -54,26 +64,32 @@ public class Plugin
 
             vaProxy.WriteToLog($"{PluginName} initialized. Bot token configured: {_config.HasToken}", "green");
 
+            WarnIfLegacyFoldersPresent(vaProxy);
+
             // Update check: release tag vs. our own version. Fire-and-forget,
             // tracked so shutdown waits for it briefly; never blocks commands.
+            _updateCts?.Dispose();
+            _updateCts = new CancellationTokenSource();
+            var updateCt = _updateCts.Token;
             Track(Task.Run(async () =>
             {
                 try
                 {
-                    if (GitHubReleaseChecker.LatestVersionFromTag(PluginVersion) == null) return; // unknown build — stay quiet
-                    var latest = await GitHubReleaseChecker.FetchLatestVersionAsync();
-                    var compare = GitHubReleaseChecker.CompareVersions(PluginVersion, latest);
-                    if (compare < 0)
-                        vaProxy.WriteToLog($"{PluginName}: Update available: v{latest} (you have v{PluginVersion}). Download: {GitHubReleaseChecker.ReleasesUrl}", "green");
-                    else if (latest != null)
-                        vaProxy.WriteToLog($"{PluginName}: You're up to date (v{PluginVersion}).", "green");
-                    // compare > 0: dev build newer than the release — stay quiet.
+                    var latest = await GitHubReleaseChecker.FetchLatestVersionAsync(updateCt);
+                    var message = GitHubReleaseChecker.BuildUpdateMessage(PluginVersion, latest);
+                    if (message != null)
+                        vaProxy.WriteToLog($"{PluginName}: {message}", "green");
+                    // null: unknown versions or dev build — stay quiet.
+                }
+                catch (OperationCanceledException)
+                {
+                    // Shutting down — stay quiet.
                 }
                 catch
                 {
-                    vaProxy.WriteToLog($"{PluginName}: Couldn't check for updates (offline?). Continuing with v{PluginVersion}.", "yellow");
+                    vaProxy.WriteToLog($"{PluginName}: Couldn't check for updates (offline?). Continuing with v{DisplayVersion}.", "yellow");
                 }
-            }));
+            }, updateCt));
 
             if (!_config.HasToken)
             {
@@ -111,10 +127,36 @@ public class Plugin
         }
     }
 
+    // Courtesy warning for manual upgraders: a leftover legacy folder next to
+    // the current one makes VoiceAttack load the plugin twice.
+    private static void WarnIfLegacyFoldersPresent(dynamic vaProxy)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var apps = dir != null ? Directory.GetParent(dir)?.FullName : null;
+            if (apps == null) return;
+            foreach (var legacy in LegacyFolderNames)
+            {
+                var legacyDir = Path.Combine(apps, legacy);
+                if (string.Equals(dir, legacyDir, StringComparison.OrdinalIgnoreCase))
+                    continue; // that's us (a non-renamed install) — nothing to warn about
+                if (Directory.Exists(legacyDir))
+                    vaProxy.WriteToLog($"{PluginName}: Legacy plugin folder '{legacy}' detected next to the current one — remove it to avoid loading the plugin twice.", "yellow");
+            }
+        }
+        catch
+        {
+            // Never break init over a courtesy warning.
+        }
+    }
+
     public static void VA_Exit1(dynamic vaProxy)
     {
         try
         {
+            try { _updateCts?.Cancel(); }
+            catch { /* shutting down; never block VoiceAttack */ }
             List<Task> pending;
             lock (_tasksLock)
             {

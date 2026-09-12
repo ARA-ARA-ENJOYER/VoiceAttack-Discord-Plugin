@@ -14,13 +14,17 @@ public static class GitHubReleaseChecker
     private const string ApiLatestUrl = "https://api.github.com/repos/ARA-ARA-ENJOYER/VoiceAttack-Discord-Plugin/releases/latest";
     private const string UserAgent = "VoiceAttackDiscordPlugin update checker";
 
-    // Shared, reused connection. GitHub's API requires a User-Agent header.
+    // Shared, reused connection. Bounded lifetime so a long-lived VoiceAttack
+    // session never sticks to a stale-DNS connection.
     private static readonly HttpClient SharedClient;
 
     static GitHubReleaseChecker()
     {
-        SharedClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-        SharedClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
+        var handler = new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+        };
+        SharedClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(10) };
     }
 
     public static Task<string?> FetchLatestVersionAsync(CancellationToken ct = default) =>
@@ -29,7 +33,11 @@ public static class GitHubReleaseChecker
     // Overload takes the client so tests can inject a fake handler — no network needed.
     public static async Task<string?> FetchLatestVersionAsync(HttpClient client, CancellationToken ct = default)
     {
-        using var response = await client.GetAsync(ApiLatestUrl, ct).ConfigureAwait(false);
+        // User-Agent per request (not on the client) so it holds for any
+        // injected client — and stays testable. GitHub's API requires it.
+        using var request = new HttpRequestMessage(HttpMethod.Get, ApiLatestUrl);
+        request.Headers.TryAddWithoutValidation("User-Agent", UserAgent);
+        using var response = await client.SendAsync(request, ct).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
@@ -69,8 +77,30 @@ public static class GitHubReleaseChecker
         return 0;
     }
 
-    private static int[] Split(string? normalized) =>
-        string.IsNullOrEmpty(normalized)
-            ? Array.Empty<int>()
-            : normalized.Split('.').Select(int.Parse).ToArray();
+    private static long[] Split(string? normalized)
+    {
+        if (string.IsNullOrEmpty(normalized)) return Array.Empty<long>();
+        // TryParse + clamp: stays total on absurd input (a 20-digit component
+        // would overflow even long) instead of throwing out of a comparer.
+        return normalized.Split('.').Select(p => long.TryParse(p, out var v) ? v : long.MaxValue).ToArray();
+    }
+
+    /// <summary>
+    /// Builds the user-facing update message core (the caller adds the plugin
+    /// name prefix), or null when there is nothing to say: unknown versions,
+    /// unreachable release info, or a dev build newer than the release.
+    /// Pure — unit-tested.
+    /// </summary>
+    public static string? BuildUpdateMessage(string? current, string? latest)
+    {
+        var display = LatestVersionFromTag(current);
+        var latestDisplay = LatestVersionFromTag(latest);
+        if (display == null) return null; // unknown build — stay quiet
+        var compare = CompareVersions(current, latest);
+        if (compare < 0)
+            return $"Update available: v{latestDisplay} (you have v{display}). Download: {ReleasesUrl}";
+        if (compare == 0 && latestDisplay != null)
+            return $"You're up to date (v{display}).";
+        return null; // indeterminate, or dev build ahead of the release
+    }
 }

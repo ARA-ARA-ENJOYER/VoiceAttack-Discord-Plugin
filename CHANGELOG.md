@@ -7,6 +7,31 @@ extracts the matching `## [x.y.z]` block into the GitHub release notes automatic
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-09-12
+
+### Fixed
+- Setup wizard migrates from the newest legacy folder first
+  (`VA.VoiceAttackDiscordPlugin` before `VA.DiscordVAPlugin`), so users with
+  both old folders keep their current token instead of a stale one.
+- Legacy-folder cleanup is per-folder fault-isolated: a locked folder
+  (VoiceAttack running) no longer aborts the install — the wizard logs how
+  to remove it manually and continues.
+- Log lines show the clean version (`v1.4.1`) instead of the build-suffixed
+  form (`v1.4.1+a56ee93…`).
+
+### Added
+- Startup guard: if a legacy plugin folder sits next to the current one, the
+  plugin logs a yellow warning to remove it (prevents double-loading).
+
+### Changed
+- Update-check internals: cancellable on shutdown, bounded HTTP connection
+  lifetime, overflow-safe version compare, and dev builds newer than the
+  release stay quiet instead of claiming "up to date".
+- Wizard folder fallback now derives from the payload's deps.json name when
+  the main marker is missing (logged as a warning); the hardcoded name is
+  the last resort only.
+- Test SDK bumped to 17.12.0; lock files now cover the win-x64 publish graph.
+
 ## [1.4.0] - 2026-09-12
 
 ### Added

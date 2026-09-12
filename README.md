@@ -46,9 +46,10 @@ deployment, your first voice command, and troubleshooting.
 Coming from **1.3.x**? The one-click path needs nothing from you:
 
 1. Download **`VoiceAttack-Discord-Plugin-Setup.exe`** (1.4.0) and run the wizard.
-2. It finds your old `VA.VoiceAttackDiscordPlugin` folder, copies your
-   `config.json` (token preserved) into the new `VoiceAttackDiscordPlugin`
-   folder, and offers to delete the old folder.
+2. It finds your old plugin folder (`VA.VoiceAttackDiscordPlugin`, or the even
+   older `VA.DiscordVAPlugin`), copies your `config.json` (token preserved —
+   the newest install wins) into the new `VoiceAttackDiscordPlugin` folder,
+   and offers to delete the old folder(s).
 3. Restart VoiceAttack. The log confirms: `You're up to date (v1.4.0).`
 
 Manual upgraders: install the release files into
