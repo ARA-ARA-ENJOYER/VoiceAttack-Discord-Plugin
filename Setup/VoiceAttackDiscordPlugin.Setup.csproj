@@ -38,8 +38,19 @@
   </ItemGroup>
 
   <Target Name="ResolvePayloadFiles" BeforeTargets="_GenerateCompileInputs">
-    <!-- The plugin project's own build output (= its main DLL). -->
-    <MSBuild Projects="@(ProjectReference)" Targets="GetTargetPath" SkipNonexistentTargets="true">
+    <!-- The plugin project's own build output (= its main DLL). RID-free on
+         purpose: under `dotnet publish -r win-x64` the RID would otherwise
+         leak into GetTargetPath (…/net8.0/win-x64/…) although nothing built
+         it there — Csc then fails with CS1566. RemoveProperties pins the
+         plain `bin/Release/net8.0/` output. Two calls on purpose: the first
+         only guarantees the file exists (a bare `dotnet publish` with no
+         prior build still works); the second returns exactly the TargetPath.
+         (One call with Targets="Build;GetTargetPath" merges both outputs and
+         embeds the marker twice → CS1508.) -->
+    <MSBuild Projects="@(ProjectReference)" Targets="Build" SkipNonexistentTargets="true"
+             RemoveProperties="RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+    <MSBuild Projects="@(ProjectReference)" Targets="GetTargetPath" SkipNonexistentTargets="true"
+             RemoveProperties="RuntimeIdentifier;RuntimeIdentifiers;SelfContained">
       <Output TaskParameter="TargetOutputs" ItemName="_PluginMainDll" />
     </MSBuild>
     <ItemGroup>
