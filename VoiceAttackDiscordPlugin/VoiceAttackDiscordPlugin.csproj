@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>VA.VoiceAttackDiscordPlugin</AssemblyName>
+    <AssemblyName>VoiceAttackDiscordPlugin</AssemblyName>
     <RootNamespace>VoiceAttackDiscordPlugin</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <Version>1.3.2</Version>
+    <Version>1.4.0</Version>
     <!-- Deterministic restores: packages.lock.json is committed, CI restores in locked mode -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>

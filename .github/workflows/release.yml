@@ -40,9 +40,9 @@ jobs:
       - name: Stage portable plugin folder
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path portable/VA.VoiceAttackDiscordPlugin | Out-Null
-          Copy-Item VoiceAttackDiscordPlugin/bin/Release/net8.0/* portable/VA.VoiceAttackDiscordPlugin/
-          Copy-Item VoiceAttackDiscordPlugin/config.example.json portable/VA.VoiceAttackDiscordPlugin/
+          New-Item -ItemType Directory -Force -Path portable/VoiceAttackDiscordPlugin | Out-Null
+          Copy-Item VoiceAttackDiscordPlugin/bin/Release/net8.0/* portable/VoiceAttackDiscordPlugin/
+          Copy-Item VoiceAttackDiscordPlugin/config.example.json portable/VoiceAttackDiscordPlugin/
           Copy-Item publish/VoiceAttack-Discord-Plugin-Setup.exe portable/
           Copy-Item README.md, SETUP.md portable/
 

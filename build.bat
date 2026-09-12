@@ -12,7 +12,7 @@ echo.
 echo Setup output: publish\VoiceAttack-Discord-Plugin-Setup.exe
 echo.
 echo To deploy, copy VoiceAttackDiscordPlugin\bin\Release\net8.0\ plus config.json to:
-echo   "C:\Program Files\VoiceAttack\Apps\VA.VoiceAttackDiscordPlugin\"
+echo   "C:\Program Files\VoiceAttack\Apps\VoiceAttackDiscordPlugin\"
 echo.
 echo Prefer the one-click route? Run the Setup wizard from the Releases page instead.
 pause

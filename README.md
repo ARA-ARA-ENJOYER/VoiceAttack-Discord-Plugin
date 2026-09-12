@@ -20,6 +20,9 @@
 >
 > **What changed?** See **[CHANGELOG.md](CHANGELOG.md)** for every release —
 > features, fixes, and breaking changes. 📝
+>
+> **Upgrading from 1.3.x?** See [⬆️ Upgrading](#️-upgrading) below — run the new
+> wizard and it migrates your token automatically; the folder lost its `VA.` prefix.
 
 ---
 
@@ -38,6 +41,29 @@ deployment, your first voice command, and troubleshooting.
 
 ---
 
+## ⬆️ Upgrading
+
+Coming from **1.3.x**? The one-click path needs nothing from you:
+
+1. Download **`VoiceAttack-Discord-Plugin-Setup.exe`** (1.4.0) and run the wizard.
+2. It finds your old `VA.VoiceAttackDiscordPlugin` folder, copies your
+   `config.json` (token preserved) into the new `VoiceAttackDiscordPlugin`
+   folder, and offers to delete the old folder.
+3. Restart VoiceAttack. The log confirms: `You're up to date (v1.4.0).`
+
+Manual upgraders: install the release files into
+`C:\Program Files\VoiceAttack\Apps\VoiceAttackDiscordPlugin\` (**new name —
+the `VA.` prefix is gone**) and copy your `config.json` across yourself. Your
+existing encrypted token keeps working (encryption is tied to your Windows
+user, not the folder). Delete the old `VA.VoiceAttackDiscordPlugin` folder so
+VoiceAttack doesn't load two copies of the plugin.
+
+New in 1.4.0: on every load the plugin checks GitHub Releases and logs either
+`You're up to date (v1.4.0).` or `Update available: v1.x.x …` (a soft yellow
+line if GitHub is unreachable — nothing is ever uploaded).
+
+---
+
 ## ✨ Features
 
 | | |
@@ -47,6 +73,7 @@ deployment, your first voice command, and troubleshooting.
 | 🔍 **Users** | Search by name **or by ID** (name-change proof), list channel members |
 | 📞 **Calls** | Open a DM and start a voice call via keyboard automation (Windows only) |
 | 🛡️ **Collision-safe** | Duplicate display names are detected — falls back to unique `@username` |
+| 🔔 **Update check** | On load, checks GitHub Releases and logs when a newer version is out |
 
 ---
 
@@ -157,7 +184,7 @@ dotnet build -c Release
 ```
 
 Output lands in `VoiceAttackDiscordPlugin/bin/Release/net8.0/`. Copy that folder plus your
-local `config.json` to `C:\Program Files\VoiceAttack\Apps\VA.VoiceAttackDiscordPlugin\`.
+local `config.json` to `C:\Program Files\VoiceAttack\Apps\VoiceAttackDiscordPlugin\`.
 Prefer the wizard? See the one-click note at the top.
 
 > **Secrets:** `config.json` (your real bot token) is git-ignored and never committed.

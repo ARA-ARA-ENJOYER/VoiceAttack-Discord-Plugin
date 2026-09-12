@@ -50,12 +50,16 @@
    (PowerShell) against `SHA256SUMS.txt` on the release page.
 2. Copy the **entire output folder** to:
    ```
-   C:\Program Files\VoiceAttack\Apps\VA.VoiceAttackDiscordPlugin\
+   C:\Program Files\VoiceAttack\Apps\VoiceAttackDiscordPlugin\
    ```
-   ⚠️ The folder **must** be named `VA.VoiceAttackDiscordPlugin` and contain `VA.VoiceAttackDiscordPlugin.dll` —
-   VoiceAttack only detects DLLs with the `VA.` prefix.
-   Upgrading from an older version? Delete the legacy `Apps\VA.DiscordVAPlugin\` folder first
-   (copy its `config.json` aside so you keep your token).
+   ℹ️ The folder name follows the plugin's own assembly name
+   (`VoiceAttackDiscordPlugin`, no `VA.` prefix needed) — VoiceAttack detects any
+   plugin DLL in any `Apps` subfolder via its `VA_*` methods, so the legacy `VA.`
+   convention is gone.
+   Upgrading from 1.3.x? The one-click path is easier: run the new Setup wizard
+   and it migrates your `config.json` from `VA.VoiceAttackDiscordPlugin`
+   automatically. Manual upgraders: copy `config.json` across yourself and delete
+   the old folder so VoiceAttack doesn't load two copies.
 3. Configure the bot — copy the template and fill in your secrets:
    ```
    copy config.example.json config.json
@@ -84,6 +88,7 @@
 4. Open the log (wrench → Log) and confirm:
    ```
    VoiceAttackDiscordPlugin initialized. Bot token configured: True
+   VoiceAttackDiscordPlugin: You're up to date (v1.4.0).
    VoiceAttackDiscordPlugin connected to Discord automatically.
    ```
 
@@ -157,7 +162,7 @@ able to find the person (you share a server or have an existing DM).
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Plugin not listed at all | Folder/DLL missing the `VA.` prefix | Folder must be `VA.VoiceAttackDiscordPlugin`, DLL `VA.VoiceAttackDiscordPlugin.dll` |
+| Plugin not listed at all | DLL not in an `Apps` subfolder, or Plugin Support off | Any `Apps` subfolder works (e.g. `VoiceAttackDiscordPlugin`) — the folder needs no `VA.` prefix; only the `VA_*` methods inside the DLL matter. Enable Plugin Support + restart |
 | `...does not contain a definition for 'Text1'` | Old build using the legacy interface | Update to the latest build; put everything in the Context field |
 | `...does not contain a definition for 'PluginDir'` | Old build | Update to the latest build |
 | `Not connected. Use 'connect' first` | Bot offline | Run a `connect` command, or set `AutoConnect: true` |

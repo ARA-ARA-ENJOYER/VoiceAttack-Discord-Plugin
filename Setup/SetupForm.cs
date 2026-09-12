@@ -15,9 +15,16 @@ namespace VoiceAttackDiscordPlugin.Setup;
 /// </summary>
 public sealed class SetupForm : Form
 {
-    private const string PluginFolderName = "VA.VoiceAttackDiscordPlugin";
-    private const string OldFolderName = "VA.DiscordVAPlugin";
+    private const string MainPluginResourceName = "Payload.MainPlugin.dll";
     private const string PayloadPrefix = "Payload.";
+
+    // Folders the plugin used to live in (pre-1.4 renames). Install migrates
+    // their config.json into the new folder and can remove them.
+    private static readonly string[] OldFolderNames = { "VA.DiscordVAPlugin", "VA.VoiceAttackDiscordPlugin" };
+
+    // Install folder name, derived once from the plugin's own assembly name —
+    // never hardcoded. Rename AssemblyName and the wizard follows.
+    private readonly string _pluginFolderName = ResolvePluginFolderName();
 
     // ---------- design tokens: two semantic palettes, dark by default ----------
     // Every text/surface pair below meets 4.5:1 in its own mode (AA).
@@ -419,7 +426,7 @@ public sealed class SetupForm : Form
         lbl.SetBounds(0, 8, 528, 24);
         _stepInstall.Controls.Add(lbl);
 
-        _removeOld.Text = "Remove the old VA.DiscordVAPlugin folder if present (recommended)";
+        _removeOld.Text = "Remove the old plugin folders if present (recommended)";
         _removeOld.Checked = true;
         _removeOld.AutoSize = false;
         Role(_removeOld, "check");
@@ -436,12 +443,38 @@ public sealed class SetupForm : Form
         _stepInstall.Controls.Add(_installLog);
     }
 
+    // The install folder name = the plugin's own assembly name, read from the
+    // embedded main DLL at runtime. Nothing is hardcoded: rename the plugin's
+    // AssemblyName and the wizard installs to the matching folder.
+    private static string ResolvePluginFolderName()
+    {
+        try
+        {
+            var asm = Assembly.GetExecutingAssembly();
+            using var stream = asm.GetManifestResourceStream(MainPluginResourceName);
+            if (stream != null)
+            {
+                string tmp = Path.Combine(Path.GetTempPath(),
+                    "va-discord-setup-" + Guid.NewGuid().ToString("N") + ".dll");
+                try
+                {
+                    using (var file = File.Create(tmp)) stream.CopyTo(file);
+                    string? name = AssemblyName.GetAssemblyName(tmp).Name;
+                    if (!string.IsNullOrWhiteSpace(name)) return name;
+                }
+                finally { try { File.Delete(tmp); } catch { } }
+            }
+        }
+        catch { /* corrupt payload — RunInstall reports the real error below */ }
+        return "VoiceAttackDiscordPlugin";
+    }
+
     private void RunInstall()
     {
         _installLog.Clear();
         try
         {
-            _installDir = Path.Combine(_vaPath.Text.Trim(), "Apps", PluginFolderName);
+            _installDir = Path.Combine(_vaPath.Text.Trim(), "Apps", _pluginFolderName);
             Directory.CreateDirectory(_installDir);
 
             int count = 0;
@@ -449,7 +482,11 @@ public sealed class SetupForm : Form
             foreach (var name in asm.GetManifestResourceNames())
             {
                 if (!name.StartsWith(PayloadPrefix, StringComparison.Ordinal)) continue;
-                var fileName = name.Substring(PayloadPrefix.Length);
+                // The main DLL keeps its real assembly name (the folder's namesake);
+                // dependencies and config ride along under their own file names.
+                var fileName = string.Equals(name, MainPluginResourceName, StringComparison.Ordinal)
+                    ? _pluginFolderName + ".dll"
+                    : name.Substring(PayloadPrefix.Length);
                 using var stream = asm.GetManifestResourceStream(name);
                 if (stream == null) continue;
                 using var file = File.Create(Path.Combine(_installDir, fileName));
@@ -464,21 +501,22 @@ public sealed class SetupForm : Form
                 return;
             }
 
-            // Migrate config + clean up the legacy folder
-            var oldDir = Path.Combine(_vaPath.Text.Trim(), "Apps", OldFolderName);
+            // Migrate config from any legacy folder + clean them up
             var newConfig = Path.Combine(_installDir, "config.json");
-            if (Directory.Exists(oldDir))
+            foreach (var oldName in OldFolderNames)
             {
+                var oldDir = Path.Combine(_vaPath.Text.Trim(), "Apps", oldName);
+                if (!Directory.Exists(oldDir)) continue;
                 var oldConfig = Path.Combine(oldDir, "config.json");
                 if (File.Exists(oldConfig) && !File.Exists(newConfig))
                 {
                     File.Copy(oldConfig, newConfig);
-                    _installLog.AppendText("Copied your existing config.json (token preserved).\r\n");
+                    _installLog.AppendText($"Copied your existing config.json from {oldName} (token preserved).\r\n");
                 }
                 if (_removeOld.Checked)
                 {
                     Directory.Delete(oldDir, recursive: true);
-                    _installLog.AppendText($"Removed old folder {OldFolderName}.\r\n");
+                    _installLog.AppendText($"Removed old folder {oldName}.\r\n");
                 }
             }
 
@@ -739,10 +777,21 @@ public sealed class SetupForm : Form
         }
     }
 
+    // Folders to look in for an existing config.json: the derived install
+    // folder first, then the legacy (pre-1.4) folders.
+    private IEnumerable<string> CandidateConfigPaths()
+    {
+        yield return Path.Combine(_vaPath.Text.Trim(), "Apps", _pluginFolderName, "config.json");
+        foreach (var oldName in OldFolderNames)
+            yield return Path.Combine(_vaPath.Text.Trim(), "Apps", oldName, "config.json");
+    }
+
     private void LoadExistingConfig()
     {
-        string configPath = Path.Combine(_vaPath.Text.Trim(), "Apps", PluginFolderName, "config.json");
-        if (!File.Exists(configPath)) return;
+        // Prefer the derived folder, then fall back to the legacy folders so a
+        // re-run still finds a token saved by an older release.
+        string? configPath = CandidateConfigPaths().FirstOrDefault(File.Exists);
+        if (configPath == null) return;
 
         try
         {
@@ -858,7 +907,7 @@ public sealed class SetupForm : Form
         {
             // Install on first visit — and again if the user went back and changed
             // the path, otherwise config.json would land in the stale folder.
-            var target = Path.Combine(_vaPath.Text.Trim(), "Apps", PluginFolderName);
+            var target = Path.Combine(_vaPath.Text.Trim(), "Apps", _pluginFolderName);
             if (_installLog.TextLength == 0 ||
                 !string.Equals(_installDir, target, StringComparison.OrdinalIgnoreCase))
             {

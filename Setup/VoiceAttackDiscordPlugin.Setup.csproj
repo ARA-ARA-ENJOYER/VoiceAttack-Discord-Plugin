@@ -11,7 +11,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Allows building this Windows-only wizard on non-Windows machines (CI publishes on Windows) -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Version>1.3.2</Version>
+    <Version>1.4.0</Version>
     <!-- Deterministic restores: packages.lock.json is committed, CI restores in locked mode -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <Description>Guided installer for the VoiceAttack Discord Plugin</Description>
@@ -20,23 +20,56 @@
   <!--
     Embed the built plugin payload so the setup is a single file.
     The ProjectReference below guarantees the plugin builds first (same
-    configuration), so the globs below always resolve — previously a clean
-    `dotnet build` of the solution could evaluate them before the plugin
-    output existed and silently ship a payload-less Setup.exe.
+    configuration); ResolvePayloadFiles then runs against real build output.
+    The plugin's own DLL is embedded separately as Payload.MainPlugin.dll —
+    the wizard derives the install folder name from that DLL's assembly name
+    at runtime, so nothing is hardcoded.
+
+    Hook point matters: Csc does NOT read @(EmbeddedResource) directly — it
+    reads @(_CoreCompileResourceInputs), which _GenerateCompileInputs snapshots
+    from @(EmbeddedResource) *before* CoreCompile runs. So this target hooks
+    BeforeTargets="_GenerateCompileInputs" (after project references build),
+    not BeforeTargets="CoreCompile" (too late — Csc would get zero resources).
+    Items also carry Type=Non-Resx + WithCulture=false, the metadata
+    _GenerateCompileInputs filters on.
   -->
   <ItemGroup>
     <ProjectReference Include="..\VoiceAttackDiscordPlugin\VoiceAttackDiscordPlugin.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PayloadFiles Include="..\VoiceAttackDiscordPlugin\bin\Release\net8.0\*.dll" />
-    <PayloadFiles Include="..\VoiceAttackDiscordPlugin\bin\Release\net8.0\*.json" />
-    <PayloadFiles Include="..\VoiceAttackDiscordPlugin\config.example.json" />
-    <EmbeddedResource Include="@(PayloadFiles)" LogicalName="Payload.%(Filename)%(Extension)" />
-  </ItemGroup>
+  <Target Name="ResolvePayloadFiles" BeforeTargets="_GenerateCompileInputs">
+    <!-- The plugin project's own build output (= its main DLL). -->
+    <MSBuild Projects="@(ProjectReference)" Targets="GetTargetPath" SkipNonexistentTargets="true">
+      <Output TaskParameter="TargetOutputs" ItemName="_PluginMainDll" />
+    </MSBuild>
+    <ItemGroup>
+      <!-- Dependencies ride along under their own file names, except the main
+           DLL itself (it travels as the Payload.MainPlugin.dll marker below).
+           Plain relative globs here: MSBuild only expands wildcards in literal
+           Include strings, NOT in property-function results like GetFullPath.
+           The Condition compares per-file names (specs differ: relative glob
+           vs. absolute GetTargetPath), so the main DLL is excluded by name. -->
+      <_PayloadDeps Include="..\VoiceAttackDiscordPlugin\bin\Release\net8.0\*.dll" />
+      <_PayloadCfg Include="..\VoiceAttackDiscordPlugin\bin\Release\net8.0\*.json" />
+      <_PayloadCfg Include="..\VoiceAttackDiscordPlugin\config.example.json" />
+      <EmbeddedResource Include="@(_PayloadDeps)" Condition="'%(Filename)%(Extension)' != '@(_PluginMainDll->'%(Filename)%(Extension)')'" LogicalName="Payload.%(Filename)%(Extension)">
+        <Type>Non-Resx</Type>
+        <WithCulture>false</WithCulture>
+      </EmbeddedResource>
+      <EmbeddedResource Include="@(_PayloadCfg)" LogicalName="Payload.%(Filename)%(Extension)">
+        <Type>Non-Resx</Type>
+        <WithCulture>false</WithCulture>
+      </EmbeddedResource>
+      <!-- …while the main DLL gets a stable marker the wizard looks up. -->
+      <EmbeddedResource Include="@(_PluginMainDll)" LogicalName="Payload.MainPlugin.dll">
+        <Type>Non-Resx</Type>
+        <WithCulture>false</WithCulture>
+      </EmbeddedResource>
+    </ItemGroup>
+  </Target>
 
-  <Target Name="CheckPayload" BeforeTargets="CoreCompile">
-    <Error Condition="'@(PayloadFiles)' == ''"
+  <Target Name="CheckPayload" BeforeTargets="CoreCompile" DependsOnTargets="ResolvePayloadFiles">
+    <Error Condition="'@(_PluginMainDll)' == ''"
            Text="Plugin payload is empty: build VoiceAttackDiscordPlugin in Release first (the ProjectReference above should do this automatically)." />
   </Target>
 

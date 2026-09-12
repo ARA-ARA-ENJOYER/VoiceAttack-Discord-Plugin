@@ -54,6 +54,27 @@ public class Plugin
 
             vaProxy.WriteToLog($"{PluginName} initialized. Bot token configured: {_config.HasToken}", "green");
 
+            // Update check: release tag vs. our own version. Fire-and-forget,
+            // tracked so shutdown waits for it briefly; never blocks commands.
+            Track(Task.Run(async () =>
+            {
+                try
+                {
+                    if (GitHubReleaseChecker.LatestVersionFromTag(PluginVersion) == null) return; // unknown build — stay quiet
+                    var latest = await GitHubReleaseChecker.FetchLatestVersionAsync();
+                    var compare = GitHubReleaseChecker.CompareVersions(PluginVersion, latest);
+                    if (compare < 0)
+                        vaProxy.WriteToLog($"{PluginName}: Update available: v{latest} (you have v{PluginVersion}). Download: {GitHubReleaseChecker.ReleasesUrl}", "green");
+                    else if (latest != null)
+                        vaProxy.WriteToLog($"{PluginName}: You're up to date (v{PluginVersion}).", "green");
+                    // compare > 0: dev build newer than the release — stay quiet.
+                }
+                catch
+                {
+                    vaProxy.WriteToLog($"{PluginName}: Couldn't check for updates (offline?). Continuing with v{PluginVersion}.", "yellow");
+                }
+            }));
+
             if (!_config.HasToken)
             {
                 vaProxy.WriteToLog($"{PluginName}: No bot token yet. Run the setup wizard " +

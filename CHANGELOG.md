@@ -7,6 +7,35 @@ extracts the matching `## [x.y.z]` block into the GitHub release notes automatic
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-12
+
+### Added
+- Startup update check: on every load the plugin queries the GitHub Releases
+  API once and logs `You're up to date (vX.Y.Z).` or
+  `Update available: vX.Y.Z (you have v…). Download: <releases/latest>` in
+  green. Offline/API failure surfaces as a soft yellow line
+  (`Couldn't check for updates (offline?)…`) and never interrupts anything.
+  Nothing is uploaded — the request is anonymous (no token or user data leaves
+  your PC).
+
+### Changed
+- Plugin assembly and install folder renamed from `VA.VoiceAttackDiscordPlugin`
+  to `VoiceAttackDiscordPlugin`: the legacy `VA.` prefix was never a
+  VoiceAttack requirement (any `Apps` subfolder whose DLL exports the `VA_*`
+  plugin methods loads), so it is gone from files, folders, and docs. The
+  `VA_*` method names in code stay — that part is the real VoiceAttack plugin
+  API.
+- Setup wizard no longer hardcodes the install folder: it derives the name
+  from the plugin payload's own assembly name at runtime, and migrates
+  `config.json` from both legacy folders (`VA.DiscordVAPlugin` and
+  `VA.VoiceAttackDiscordPlugin`) with optional cleanup.
+
+### Upgrading (1.3.x → 1.4.0)
+- One-click: run the 1.4.0 setup wizard — it moves your token/config across
+  and removes the old folder. Manual: install into
+  `Apps\VoiceAttackDiscordPlugin\`, copy `config.json` yourself, and delete
+  the old folder so VoiceAttack doesn't load two copies of the plugin.
+
 ## [1.3.2] - 2026-09-11
 
 ### Changed
